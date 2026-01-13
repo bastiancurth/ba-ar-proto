@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Master Prototyp - Bastian Curth</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+
+    <style>
+        .arjs-loader { height: 100%; width: 100%; position: absolute; top: 0; left: 0; background-color: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex; justify-content: center; align-items: center; color: white; font-family: sans-serif; }
+        #ui-overlay { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(0,0,0,0.5); color: white; padding: 10px 20px; border-radius: 20px; font-family: sans-serif; pointer-events: none; }
+    </style>
+
+    <script>
+        AFRAME.registerComponent('chromakey', {
+            schema: { color: { type: 'color', default: '#00ff00' } },
+            init: function () {
+                const video = document.querySelector('#ki-video');
+                const mesh = this.el.getObject3D('mesh');
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        tex: { value: new THREE.VideoTexture(video) },
+                        keyColor: { value: new THREE.Color(this.data.color) }
+                    },
+                    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                    fragmentShader: `
+                        uniform sampler2D tex; uniform vec3 keyColor; varying vec2 vUv;
+                        void main() {
+                            vec4 color = texture2D(tex, vUv);
+                            float diff = distance(color.rgb, keyColor);
+                            if (diff < 0.35) discard;
+                            gl_FragColor = color;
+                        }
+                    `,
+                    transparent: true
+                });
+                mesh.material = material;
+            }
+        });
+    </script>
+</head>
+
+<body style="margin: 0; overflow: hidden;">
+    <div class="arjs-loader"><div>Lade historische Daten...</div></div>
+    <div id="ui-overlay">Bild scannen & tippen für Audio</div>
+
+    <a-scene embedded arjs="trackingMethod: nft; sourceType: webcam; debugUIEnabled: false;">
+        <a-assets>
+            <video id="ki-video" src="assets/video.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+        </a-assets>
+
+        <a-nft type="nft" url="assets/markers/painting" smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
+            <a-video src="#ki-video" chromakey="color: #00ff00"
+                     rotation="-90 0 0" position="150 0 -100" width="300" height="400">
+            </a-video>
+        </a-nft>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        window.addEventListener('click', () => {
+            const v = document.querySelector('#ki-video');
+            v.play();
+            document.getElementById('ui-overlay').style.display = 'none';
+        });
+        window.addEventListener('arjs-nft-loaded', () => {
+            document.querySelector('.arjs-loader').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
