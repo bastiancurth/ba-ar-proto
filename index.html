@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Master - Final Safety</title>
+    <title>AR Master - Final</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
@@ -17,7 +17,7 @@
             background: rgba(0, 0, 0, 0.9); color: #ff3333;
             padding: 10px 20px; border-radius: 30px; border: 2px solid #ff3333;
             font-weight: bold; font-size: 16px; z-index: 9999; text-align: center;
-            width: 80%;
+            width: 90%; max-width: 400px;
         }
 
         /* START SCREEN */
@@ -25,30 +25,30 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 10, 10, 0.98); z-index: 10000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white;
+            color: white; text-align: center;
         }
 
         button {
             padding: 15px 30px; font-size: 18px; font-weight: bold;
             border: none; border-radius: 50px; cursor: pointer; margin-top: 20px;
         }
-        .btn-start { background: #00d2ff; color: black; }
-        .btn-cheat { background: #ffaa00; color: black; font-size: 14px; padding: 10px 20px; margin-top: 40px; }
+        .btn-start { background: #00d2ff; color: black; box-shadow: 0 0 15px #00d2ff; }
+        .btn-cheat { background: #ffaa00; color: black; font-size: 14px; padding: 10px 20px; margin-top: 50px; }
 
-        #error-log { color: red; margin-top: 20px; font-family: monospace; font-size: 12px; }
+        #error-log { color: #888; margin-top: 20px; font-family: monospace; font-size: 12px; max-width: 80%; }
     </style>
 </head>
 
 <body>
-    <div id="status-bar">⏳ INITIALISIERE...</div>
+    <div id="status-bar">⏳ VERBINDE MIT GITHUB...</div>
 
     <div id="start-overlay">
-        <h1>AR PROTOTYP</h1>
-        <div id="error-log">Prüfe Marker-Dateien...</div>
+        <h1>MASTER PROTOTYP</h1>
+        <div id="error-log">Prüfe Server-Verbindung...</div>
 
         <button class="btn-start" onclick="startApp()">KAMERA STARTEN</button>
 
-        <button class="btn-cheat" onclick="forceTracking()">⚠️ TRACKING SIMULIEREN</button>
+        <button class="btn-cheat" onclick="forceTracking()">⚠️ DEMO / NOTFALL</button>
     </div>
 
     <a-scene
@@ -65,7 +65,7 @@
         <a-nft
             id="nft-entity"
             type="nft"
-            url="assets/markers/painting"
+            url="https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting"
             smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
 
             <a-video
@@ -93,64 +93,62 @@
         let isTracking = false;
 
         // --- SCHRITT 1: PRÜFEN OB DATEIEN DA SIND ---
+        // Wir nutzen jetzt den VOLLEN PFAD
+        const markerUrl = "https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset";
+
         async function checkFiles() {
             try {
-                // Versuche die .fset Datei zu laden
-                let response = await fetch('assets/markers/painting.fset');
+                let response = await fetch(markerUrl);
                 if (response.ok) {
-                    errorLog.innerHTML = "✅ Marker gefunden. Bereit.";
+                    errorLog.innerHTML = "✅ GitHub Verbindung OK.";
                     errorLog.style.color = "#00ff00";
-                    statusBar.innerText = "🔍 SUCHE BILD...";
+                    statusBar.innerText = "🔍 BEREIT ZUM SCANNEN";
                 } else {
-                    throw new Error("404: 'assets/markers/painting.fset' nicht gefunden!");
+                    throw new Error("404: Marker nicht im Repo gefunden!");
                 }
             } catch (e) {
-                errorLog.innerHTML = "❌ " + e.message + "<br>Checke Groß-/Kleinschreibung!";
-                statusBar.innerText = "⚠️ DATEI-FEHLER";
+                errorLog.innerHTML = "❌ " + e.message;
+                statusBar.innerText = "⚠️ SERVER FEHLER";
             }
         }
-        checkFiles(); // Sofort ausführen
+        checkFiles();
 
         // --- SCHRITT 2: STARTEN ---
         window.startApp = function() {
             startOverlay.style.display = 'none';
-            // Wir starten das Video, ABER ES BLEIBT STUMM (muted=true im HTML)
+            // Video stumm anspielen
             video.play().catch(e => console.log("Autoplay prevent"));
         }
 
-        // --- LOGIK: WENN MARKER GEFUNDEN ---
+        // --- LOGIK: MARKER GEFUNDEN ---
         document.querySelector('a-nft').addEventListener('markerFound', () => {
             console.log("Marker gefunden!");
             isTracking = true;
 
-            // UI Update
-            statusBar.innerText = "✅ BILD ERKANNT!";
+            statusBar.innerText = "✅ MONA LISA ERKANNT!";
             statusBar.style.borderColor = "#00ff00";
             statusBar.style.color = "#00ff00";
 
-            // JETZT erst Ton anmachen
             video.muted = false;
             video.play();
             audio.play();
         });
 
-        // --- LOGIK: WENN MARKER VERLOREN ---
+        // --- LOGIK: MARKER VERLOREN ---
         document.querySelector('a-nft').addEventListener('markerLost', () => {
             console.log("Marker verloren!");
             isTracking = false;
 
-            // UI Update
             statusBar.innerText = "🔍 SUCHE BILD...";
             statusBar.style.borderColor = "#ff3333";
             statusBar.style.color = "#ff3333";
 
-            // Sofort stumm und pause
             video.muted = true;
             video.pause();
             audio.pause();
         });
 
-        // --- NOTFALL: TRACKING ERZWINGEN (Button) ---
+        // --- NOTFALL: TRACKING ERZWINGEN ---
         window.forceTracking = function() {
             startOverlay.style.display = 'none';
             isTracking = true;
@@ -159,16 +157,14 @@
             statusBar.style.borderColor = "orange";
             statusBar.style.color = "orange";
 
-            // Fake-Video an der Kamera einschalten
             cheatVideo.setAttribute('visible', 'true');
 
-            // Ton an
             video.muted = false;
             video.play();
             audio.play();
         }
 
-        // Klick auf Screen: Nur laut machen, wenn wir tracken!
+        // Klick auf Screen
         window.addEventListener('click', () => {
             if (isTracking) {
                 video.muted = false;
