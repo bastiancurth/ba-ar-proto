@@ -1,95 +1,195 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Master Prototyp - Korrektur</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR Master - Mit Fallback</title>
+
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
-        /* Verhindert, dass die Kamera nur in der Ecke klebt */
-        body { margin: 0; overflow: hidden; width: 100%; height: 100%; }
-        canvas { width: 100% !important; height: 100% !important; margin: 0 !important; }
+        /* Basis-Layout */
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
 
-        .arjs-loader {
-            height: 100%; width: 100%; position: absolute; top: 0; left: 0;
-            background-color: rgba(0, 0, 0, 0.8); z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-            color: white; font-family: sans-serif;
+        /* Erzwinge Vollbild für Kamera */
+        #arjs-video, canvas.a-canvas {
+            width: 100% !important; height: 100% !important;
+            object-fit: cover !important; position: absolute !important;
+            top: 0; left: 0; z-index: 0;
         }
 
-        #ui-overlay {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 10; background: rgba(0,0,0,0.6); color: white;
-            padding: 15px; border-radius: 20px; font-family: sans-serif;
-            text-align: center; display: none; pointer-events: none;
+        /* Canvas über Video */
+        canvas.a-canvas { z-index: 1 !important; }
+
+        /* UI: Loader */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; font-family: sans-serif; text-align: center; transition: opacity 0.5s;
+        }
+        .spinner {
+            border: 4px solid #333; border-top: 4px solid #00d2ff;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* UI: Fallback Button (Erscheint bei Fehlern) */
+        #fallback-btn {
+            margin-top: 20px; padding: 12px 24px;
+            background: #ff4757; color: white; border: none; border-radius: 30px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            display: none; /* Erst unsichtbar */
+        }
+
+        /* UI: Overlay (Wenn es klappt) */
+        #overlay {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); color: white; padding: 15px 25px;
+            border-radius: 30px; font-family: sans-serif; pointer-events: none;
+            display: none; z-index: 100; white-space: nowrap;
         }
     </style>
+
+    <script>
+        AFRAME.registerComponent('chromakey', {
+            schema: { color: { type: 'color', default: '#00ff00' } },
+            init: function () {
+                const video = document.querySelector('#ki-video');
+                this.material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        tex: { value: new THREE.VideoTexture(video) },
+                        color: { value: new THREE.Color(this.data.color) }
+                    },
+                    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                    fragmentShader: `
+                        uniform sampler2D tex; uniform vec3 color; varying vec2 vUv;
+                        void main() {
+                            vec4 tColor = texture2D(tex, vUv);
+                            float dist = distance(tColor.rgb, color);
+                            if (dist < 0.4) discard; // Transparenz-Logik
+                            gl_FragColor = tColor;
+                        }
+                    `,
+                    transparent: true, side: THREE.DoubleSide
+                });
+                this.el.getObject3D('mesh').material = this.material;
+            }
+        });
+    </script>
 </head>
 
-<body style="margin: 0; overflow: hidden;">
-    <div class="arjs-loader"><div>Analysiere historische Daten...</div></div>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="loader-text">Suche Mona Lisa...</div>
+        <button id="fallback-btn" onclick="startFallbackMode()">Ohne Marker starten (Demo)</button>
+    </div>
 
-    <div id="ui-overlay">Mona Lisa erkannt!<br>Tippe auf den Bildschirm für Ton</div>
+    <div id="overlay">Mona Lisa aktiv 🟢</div>
 
     <a-scene
-        vr-mode-ui="enabled: false;"
-        renderer="logarithmicDepthBuffer: true; precision: medium;"
         embedded
+        vr-mode-ui="enabled: false;"
+        renderer="logarithmicDepthBuffer: true; precision: high;"
         arjs="trackingMethod: nft; sourceType: webcam; debugUIEnabled: false;">
 
         <a-assets>
-            <video id="ki-video" src="assets/video.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+            <video id="ki-video" src="assets/video.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
             <audio id="ki-audio" src="assets/audio.mp3" preload="auto" crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-nft
-            id="nft-marker"
-            type="nft"
-            url="assets/markers/painting"
+            id="nft-marker" type="nft" url="assets/markers/painting"
             smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
-
-            <a-video src="#ki-video" position="50 0 -50" rotation="-90 0 0" width="100" height="150"></a-video>
+            <a-video src="#ki-video" chromakey="color: #00ff00"
+                     width="1" height="1.5" position="50 0 -100" rotation="-90 0 0" scale="150 150 150">
+            </a-video>
         </a-nft>
 
-        <a-entity camera></a-entity>
+        <a-entity camera position="0 0 0">
+            <a-video
+                id="fallback-video"
+                src="#ki-video"
+                chromakey="color: #00ff00"
+                visible="false"
+                position="0 0 -2"
+                width="1.5" height="2.2">
+            </a-video>
+        </a-entity>
+
     </a-scene>
 
     <script>
-        const video = document.querySelector('#ki-video');
-        const audio = document.querySelector('#ki-audio');
-        const loader = document.querySelector('.arjs-loader');
-        const overlay = document.querySelector('#ui-overlay');
-        const marker = document.querySelector('#nft-marker');
+        const loader = document.getElementById('loader');
+        const fallbackBtn = document.getElementById('fallback-btn');
+        const loaderText = document.getElementById('loader-text');
+        const video = document.getElementById('ki-video');
+        const audio = document.getElementById('ki-audio');
+        const nftMarker = document.getElementById('nft-marker');
+        const fallbackEntity = document.getElementById('fallback-video');
+        const overlay = document.getElementById('overlay');
 
-        let isMarkerFound = false;
+        let isFallbackActive = false;
 
-        // 1. Fix: Loader verschwindet, wenn Marker-DATEIEN im RAM sind
+        // 1. Wenn nach 4 Sekunden nichts passiert -> Button zeigen
+        setTimeout(() => {
+            loaderText.innerText = "Dauert lange? Probier den Demo-Modus:";
+            fallbackBtn.style.display = 'block';
+        }, 4000);
+
+        // 2. Event: Echtes NFT Tracking hat geklappt
         window.addEventListener('arjs-nft-loaded', () => {
-            loader.style.display = 'none';
+            if (!isFallbackActive) {
+                loader.style.display = 'none';
+            }
         });
 
-        // 2. Fix: Audio-Logik nur bei tatsächlichem Scan
-        marker.addEventListener('markerFound', () => {
-            isMarkerFound = true;
-            overlay.style.display = 'block';
-        });
-
-        marker.addEventListener('markerLost', () => {
-            isMarkerFound = false;
-            overlay.style.display = 'none';
-            video.pause();
-            audio.pause();
-        });
-
-        // Klick-Event startet Medien NUR wenn Marker im Bild ist
-        window.addEventListener('click', () => {
-            if (isMarkerFound) {
-                video.muted = false;
+        // 3. Logik: Marker gefunden (Echtes AR)
+        nftMarker.addEventListener('markerFound', () => {
+            if (!isFallbackActive) {
                 video.play();
                 audio.play();
-                overlay.innerText = "Interaktion läuft...";
+                overlay.style.display = 'block';
+            }
+        });
+
+        nftMarker.addEventListener('markerLost', () => {
+            if (!isFallbackActive) {
+                video.pause();
+                audio.pause();
+                overlay.style.display = 'none';
+            }
+        });
+
+        // 4. DIE RETTUNG: Fallback-Funktion (Fake AR)
+        window.startFallbackMode = function() {
+            isFallbackActive = true;
+            console.log("Starte Fallback-Modus...");
+
+            // Loader weg
+            loader.style.display = 'none';
+
+            // Fake-Video (an der Kamera) sichtbar machen
+            fallbackEntity.setAttribute('visible', 'true');
+
+            // Medien abspielen
+            video.muted = false;
+            video.play();
+            audio.play();
+
+            overlay.innerText = "Demo-Modus (Kein Tracking)";
+            overlay.style.display = 'block';
+        };
+
+        // Klick auf Screen startet Audio (Browser Policy Fix)
+        window.addEventListener('click', () => {
+            if(isFallbackActive || overlay.style.display === 'block') {
+                video.play();
+                audio.play();
             }
         });
     </script>
