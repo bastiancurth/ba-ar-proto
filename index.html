@@ -3,50 +3,35 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Master Prototyp - Bastian Curth</title>
-
+    <title>Master Prototyp - Korrektur</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
-        .arjs-loader { height: 100%; width: 100%; position: absolute; top: 0; left: 0; background-color: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex; justify-content: center; align-items: center; color: white; font-family: sans-serif; }
-        #ui-overlay { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(0,0,0,0.6); color: white; padding: 12px 24px; border-radius: 30px; font-family: sans-serif; pointer-events: none; display: none; text-align: center; }
-    </style>
+        /* Verhindert, dass die Kamera nur in der Ecke klebt */
+        body { margin: 0; overflow: hidden; width: 100%; height: 100%; }
+        canvas { width: 100% !important; height: 100% !important; margin: 0 !important; }
 
-    <script>
-        // Shader zur Entfernung des grünen Hintergrunds (Chroma Keying)
-        AFRAME.registerComponent('chromakey', {
-            schema: { color: { type: 'color', default: '#00ff00' } },
-            init: function () {
-                const video = document.querySelector('#ki-video');
-                const mesh = this.el.getObject3D('mesh');
-                const material = new THREE.ShaderMaterial({
-                    uniforms: {
-                        tex: { value: new THREE.VideoTexture(video) },
-                        keyColor: { value: new THREE.Color(this.data.color) }
-                    },
-                    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-                    fragmentShader: `
-                        uniform sampler2D tex; uniform vec3 keyColor; varying vec2 vUv;
-                        void main() {
-                            vec4 color = texture2D(tex, vUv);
-                            float diff = distance(color.rgb, keyColor);
-                            if (diff < 0.35) discard;
-                            gl_FragColor = color;
-                        }
-                    `,
-                    transparent: true
-                });
-                mesh.material = material;
-            }
-        });
-    </script>
+        .arjs-loader {
+            height: 100%; width: 100%; position: absolute; top: 0; left: 0;
+            background-color: rgba(0, 0, 0, 0.8); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-family: sans-serif;
+        }
+
+        #ui-overlay {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10; background: rgba(0,0,0,0.6); color: white;
+            padding: 15px; border-radius: 20px; font-family: sans-serif;
+            text-align: center; display: none; pointer-events: none;
+        }
+    </style>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
-    <div class="arjs-loader"><div>Lade historische Daten (NFT)...</div></div>
+    <div class="arjs-loader"><div>Analysiere historische Daten...</div></div>
 
-    <div id="ui-overlay">Bild erkannt!<br>Tippen für Audio & Video</div>
+    <div id="ui-overlay">Mona Lisa erkannt!<br>Tippe auf den Bildschirm für Ton</div>
 
     <a-scene
         vr-mode-ui="enabled: false;"
@@ -60,13 +45,12 @@
         </a-assets>
 
         <a-nft
+            id="nft-marker"
             type="nft"
             url="assets/markers/painting"
             smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
 
-            <a-video src="#ki-video" chromakey="color: #00ff00"
-                     rotation="-90 0 0" position="50 0 -50" width="100" height="150">
-            </a-video>
+            <a-video src="#ki-video" position="50 0 -50" rotation="-90 0 0" width="100" height="150"></a-video>
         </a-nft>
 
         <a-entity camera></a-entity>
@@ -77,23 +61,36 @@
         const audio = document.querySelector('#ki-audio');
         const loader = document.querySelector('.arjs-loader');
         const overlay = document.querySelector('#ui-overlay');
+        const marker = document.querySelector('#nft-marker');
 
-        // Event: Marker wurde erfolgreich geladen
+        let isMarkerFound = false;
+
+        // 1. Fix: Loader verschwindet, wenn Marker-DATEIEN im RAM sind
         window.addEventListener('arjs-nft-loaded', () => {
             loader.style.display = 'none';
+        });
+
+        // 2. Fix: Audio-Logik nur bei tatsächlichem Scan
+        marker.addEventListener('markerFound', () => {
+            isMarkerFound = true;
             overlay.style.display = 'block';
         });
 
-        // Event: Nutzer interagiert (Notwendig für Audio-Start im Browser)
-        window.addEventListener('click', () => {
-            if(video) {
-                video.muted = false; // Stummschaltung aufheben
-                video.play();
-            }
-            if(audio) {
-                audio.play();
-            }
+        marker.addEventListener('markerLost', () => {
+            isMarkerFound = false;
             overlay.style.display = 'none';
+            video.pause();
+            audio.pause();
+        });
+
+        // Klick-Event startet Medien NUR wenn Marker im Bild ist
+        window.addEventListener('click', () => {
+            if (isMarkerFound) {
+                video.muted = false;
+                video.play();
+                audio.play();
+                overlay.innerText = "Interaktion läuft...";
+            }
         });
     </script>
 </body>
