@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Master - Final</title>
+    <title>AR Master - Final Scaled</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
@@ -71,9 +71,9 @@
             <a-video
                 src="#ki-video"
                 width="1.5" height="2.2"
-                position="50 0 -100"
+                position="70 0 -80"
                 rotation="-90 0 0"
-                scale="150 150 150">
+                scale="80 80 80">
             </a-video>
         </a-nft>
 
@@ -93,7 +93,6 @@
         let isTracking = false;
 
         // --- SCHRITT 1: PRÜFEN OB DATEIEN DA SIND ---
-        // Wir nutzen jetzt den VOLLEN PFAD
         const markerUrl = "https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset";
 
         async function checkFiles() {
@@ -116,7 +115,6 @@
         // --- SCHRITT 2: STARTEN ---
         window.startApp = function() {
             startOverlay.style.display = 'none';
-            // Video stumm anspielen
             video.play().catch(e => console.log("Autoplay prevent"));
         }
 
