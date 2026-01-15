@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Master - Final Scaled</title>
+    <title>AR Master - Kalibrierung & Safety</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
@@ -11,19 +11,33 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; background: transparent; }
 
-        /* STATUS AMPEL */
+        /* --- STATUS AMPEL --- */
         #status-bar {
             position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9); color: #ff3333;
-            padding: 10px 20px; border-radius: 30px; border: 2px solid #ff3333;
-            font-weight: bold; font-size: 16px; z-index: 9999; text-align: center;
-            width: 90%; max-width: 400px;
+            padding: 8px 15px; border-radius: 30px; border: 2px solid #ff3333;
+            font-weight: bold; font-size: 14px; z-index: 9000; text-align: center;
+            white-space: nowrap;
         }
 
-        /* START SCREEN */
+        /* --- KALIBRIERUNGS PANEL (Unten) --- */
+        #calib-panel {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.85); color: #00d2ff;
+            padding: 15px 20px 30px 20px; /* Mehr Platz unten */
+            border-top: 3px solid #00d2ff;
+            z-index: 9999; /* Über der Kamera, unter dem Startscreen */
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        label { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; color: white; }
+        input[type=range] { width: 100%; height: 25px; accent-color: #00d2ff; }
+        .val-disp { color: #00d2ff; font-family: monospace; }
+
+        /* --- START SCREEN (Verdeckt alles am Anfang) --- */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 10, 0.98); z-index: 10000;
+            background: rgba(10, 10, 10, 1.0); z-index: 10000; /* Ganz oben! */
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; text-align: center;
         }
@@ -35,20 +49,31 @@
         .btn-start { background: #00d2ff; color: black; box-shadow: 0 0 15px #00d2ff; }
         .btn-cheat { background: #ffaa00; color: black; font-size: 14px; padding: 10px 20px; margin-top: 50px; }
 
-        #error-log { color: #888; margin-top: 20px; font-family: monospace; font-size: 12px; max-width: 80%; }
+        #error-log { color: #888; margin-top: 20px; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 
 <body>
-    <div id="status-bar">⏳ VERBINDE MIT GITHUB...</div>
+    <div id="status-bar">⏳ VERBINDE...</div>
 
     <div id="start-overlay">
-        <h1>MASTER PROTOTYP</h1>
-        <div id="error-log">Prüfe Server-Verbindung...</div>
-
+        <h1>KALIBRIERUNG</h1>
+        <div id="error-log">Prüfe Server...</div>
         <button class="btn-start" onclick="startApp()">KAMERA STARTEN</button>
-
         <button class="btn-cheat" onclick="forceTracking()">⚠️ DEMO / NOTFALL</button>
+    </div>
+
+    <div id="calib-panel">
+        <div style="text-align:center; margin-bottom:5px; color:#aaa; font-size:12px;">Werte aufschreiben!</div>
+
+        <label>Größe: <span id="val-s" class="val-disp">150</span></label>
+        <input type="range" id="sl-s" min="10" max="400" value="150" oninput="updateAR()">
+
+        <label>Links/Rechts: <span id="val-x" class="val-disp">50</span></label>
+        <input type="range" id="sl-x" min="-200" max="400" value="50" oninput="updateAR()">
+
+        <label>Oben/Unten: <span id="val-z" class="val-disp">-50</span></label>
+        <input type="range" id="sl-z" min="-400" max="200" value="-50" oninput="updateAR()">
     </div>
 
     <a-scene
@@ -63,22 +88,23 @@
         </a-assets>
 
         <a-nft
-            id="nft-entity"
+            id="nft-marker"
             type="nft"
             url="https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting"
             smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
 
             <a-video
+                id="ar-video"
                 src="#ki-video"
-                width="1.5" height="2.2"
-                position="70 0 -80"
+                width="1" height="1.49"
+                position="50 0 -50"
                 rotation="-90 0 0"
-                scale="80 80 80">
+                scale="150 150 150">
             </a-video>
         </a-nft>
 
         <a-entity camera>
-            <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -4" width="1.5" height="2.2"></a-video>
+             <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -4" width="1" height="1.49"></a-video>
         </a-entity>
     </a-scene>
 
@@ -89,86 +115,81 @@
         const video = document.getElementById('ki-video');
         const audio = document.getElementById('ki-audio');
         const cheatVideo = document.getElementById('cheat-video');
+        const arVideo = document.getElementById('ar-video');
 
-        let isTracking = false;
+        // SLIDER REFS
+        const slS = document.getElementById('sl-s');
+        const slX = document.getElementById('sl-x');
+        const slZ = document.getElementById('sl-z');
+        const valS = document.getElementById('val-s');
+        const valX = document.getElementById('val-x');
+        const valZ = document.getElementById('val-z');
 
-        // --- SCHRITT 1: PRÜFEN OB DATEIEN DA SIND ---
-        const markerUrl = "https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset";
+        // UPDATE FUNKTION (Live)
+        window.updateAR = function() {
+            let s = slS.value;
+            let x = slX.value;
+            let z = slZ.value;
 
-        async function checkFiles() {
-            try {
-                let response = await fetch(markerUrl);
-                if (response.ok) {
-                    errorLog.innerHTML = "✅ GitHub Verbindung OK.";
-                    errorLog.style.color = "#00ff00";
-                    statusBar.innerText = "🔍 BEREIT ZUM SCANNEN";
-                } else {
-                    throw new Error("404: Marker nicht im Repo gefunden!");
-                }
-            } catch (e) {
-                errorLog.innerHTML = "❌ " + e.message;
-                statusBar.innerText = "⚠️ SERVER FEHLER";
-            }
+            // Update Text
+            valS.innerText = s;
+            valX.innerText = x;
+            valZ.innerText = z;
+
+            // Update NFT Video
+            arVideo.setAttribute('scale', `${s} ${s} ${s}`);
+            arVideo.setAttribute('position', `${x} 0 ${z}`);
+
+            // Update Cheat Video (optional, falls du im Demo Modus testen willst)
+            // Im Cheat Modus ist Skalierung anders, wir ändern nur das NFT Video hier primär
         }
-        checkFiles();
 
-        // --- SCHRITT 2: STARTEN ---
+        // 1. CHECK FILES
+        const markerUrl = "https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset";
+        fetch(markerUrl).then(r => {
+            if(r.ok) {
+                errorLog.innerHTML = "✅ GitHub OK";
+                errorLog.style.color = "#00ff00";
+                statusBar.innerText = "🔍 BEREIT";
+            } else {
+                errorLog.innerHTML = "❌ 404 Fehler";
+            }
+        });
+
+        // 2. START APP
         window.startApp = function() {
             startOverlay.style.display = 'none';
-            video.play().catch(e => console.log("Autoplay prevent"));
+            video.play().catch(e => {});
         }
 
-        // --- LOGIK: MARKER GEFUNDEN ---
+        // 3. MARKER EVENTS
         document.querySelector('a-nft').addEventListener('markerFound', () => {
-            console.log("Marker gefunden!");
-            isTracking = true;
-
-            statusBar.innerText = "✅ MONA LISA ERKANNT!";
+            statusBar.innerText = "✅ ERKANNT -> SCHIEBEN!";
             statusBar.style.borderColor = "#00ff00";
             statusBar.style.color = "#00ff00";
-
-            video.muted = false;
-            video.play();
-            audio.play();
+            video.muted = false; video.play(); audio.play();
         });
 
-        // --- LOGIK: MARKER VERLOREN ---
         document.querySelector('a-nft').addEventListener('markerLost', () => {
-            console.log("Marker verloren!");
-            isTracking = false;
-
-            statusBar.innerText = "🔍 SUCHE BILD...";
+            statusBar.innerText = "🔍 Suche...";
             statusBar.style.borderColor = "#ff3333";
             statusBar.style.color = "#ff3333";
-
-            video.muted = true;
-            video.pause();
-            audio.pause();
+            video.muted = true; video.pause(); audio.pause();
         });
 
-        // --- NOTFALL: TRACKING ERZWINGEN ---
+        // 4. NOTFALL DEMO
         window.forceTracking = function() {
             startOverlay.style.display = 'none';
-            isTracking = true;
-
-            statusBar.innerText = "⚠️ SIMULATION AKTIV";
+            statusBar.innerText = "⚠️ DEMO MODUS";
             statusBar.style.borderColor = "orange";
             statusBar.style.color = "orange";
-
             cheatVideo.setAttribute('visible', 'true');
-
-            video.muted = false;
-            video.play();
-            audio.play();
+            video.muted = false; video.play(); audio.play();
+            alert("Hinweis: Die Slider funktionieren nur im echten AR Modus, nicht in der Demo!");
         }
 
-        // Klick auf Screen
         window.addEventListener('click', () => {
-            if (isTracking) {
-                video.muted = false;
-                video.play();
-                audio.play();
-            }
+            if(!video.paused) { video.play(); audio.play(); }
         });
     </script>
 </body>
