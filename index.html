@@ -3,51 +3,70 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Master - Kalibrierung & Safety</title>
+    <title>AR Master - Layout Fix</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
+        /* Grundlayout */
         body { margin: 0; overflow: hidden; font-family: sans-serif; background: transparent; }
+        * { box-sizing: border-box; } /* Wichtig: Verhindert, dass Padding das Layout sprengt */
 
-        /* --- STATUS AMPEL --- */
+        /* --- STATUS AMPEL (Kleiner & Oben) --- */
         #status-bar {
             position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9); color: #ff3333;
-            padding: 8px 15px; border-radius: 30px; border: 2px solid #ff3333;
-            font-weight: bold; font-size: 14px; z-index: 9000; text-align: center;
+            padding: 5px 15px; border-radius: 20px; border: 2px solid #ff3333;
+            font-weight: bold; font-size: 12px; z-index: 9000; text-align: center;
             white-space: nowrap;
         }
 
-        /* --- KALIBRIERUNGS PANEL (Unten) --- */
+        /* --- KALIBRIERUNGS PANEL (Verbessert) --- */
         #calib-panel {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(0, 0, 0, 0.85); color: #00d2ff;
-            padding: 15px 20px 30px 20px; /* Mehr Platz unten */
+            background: rgba(0, 0, 0, 0.9); color: #00d2ff;
+            padding: 15px;
             border-top: 3px solid #00d2ff;
-            z-index: 9999; /* Über der Kamera, unter dem Startscreen */
-            display: flex; flex-direction: column; gap: 10px;
+            z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+            max-height: 40vh; overflow-y: auto; /* Scrollbar falls zu klein */
         }
 
-        label { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; color: white; }
-        input[type=range] { width: 100%; height: 25px; accent-color: #00d2ff; }
-        .val-disp { color: #00d2ff; font-family: monospace; }
+        /* Container für jeden Regler */
+        .slider-group {
+            display: flex; flex-direction: column;
+            width: 100%;
+        }
 
-        /* --- START SCREEN (Verdeckt alles am Anfang) --- */
+        /* Beschriftung */
+        label {
+            display: flex; justify-content: space-between;
+            font-size: 14px; font-weight: bold; color: white; margin-bottom: 5px;
+        }
+
+        /* Die Zahl (Wichtig!) */
+        .val-disp { color: #00d2ff; font-family: monospace; font-size: 16px; }
+
+        /* Der Slider selbst */
+        input[type=range] {
+            width: 100%; height: 30px; accent-color: #00d2ff; cursor: pointer;
+        }
+
+        /* --- START SCREEN --- */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 10, 1.0); z-index: 10000; /* Ganz oben! */
+            background: rgba(10, 10, 10, 1.0); z-index: 10000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center;
+            color: white; text-align: center; padding: 20px;
         }
 
         button {
-            padding: 15px 30px; font-size: 18px; font-weight: bold;
-            border: none; border-radius: 50px; cursor: pointer; margin-top: 20px;
+            padding: 15px 30px; font-size: 18px; font-weight: bold; width: 100%; max-width: 300px;
+            border: none; border-radius: 50px; cursor: pointer; margin-top: 15px;
         }
         .btn-start { background: #00d2ff; color: black; box-shadow: 0 0 15px #00d2ff; }
-        .btn-cheat { background: #ffaa00; color: black; font-size: 14px; padding: 10px 20px; margin-top: 50px; }
+        .btn-cheat { background: #ffaa00; color: black; font-size: 14px; margin-top: 40px; }
 
         #error-log { color: #888; margin-top: 20px; font-family: monospace; font-size: 12px; }
     </style>
@@ -64,16 +83,22 @@
     </div>
 
     <div id="calib-panel">
-        <div style="text-align:center; margin-bottom:5px; color:#aaa; font-size:12px;">Werte aufschreiben!</div>
+        <div style="text-align:center; margin-bottom:5px; color:#aaa; font-size:12px;">Werte notieren!</div>
 
-        <label>Größe: <span id="val-s" class="val-disp">150</span></label>
-        <input type="range" id="sl-s" min="10" max="400" value="150" oninput="updateAR()">
+        <div class="slider-group">
+            <label>Größe: <span id="val-s" class="val-disp">150</span></label>
+            <input type="range" id="sl-s" min="10" max="400" value="150" oninput="updateAR()">
+        </div>
 
-        <label>Links/Rechts: <span id="val-x" class="val-disp">50</span></label>
-        <input type="range" id="sl-x" min="-200" max="400" value="50" oninput="updateAR()">
+        <div class="slider-group">
+            <label>Links/Rechts (X): <span id="val-x" class="val-disp">50</span></label>
+            <input type="range" id="sl-x" min="-200" max="400" value="50" oninput="updateAR()">
+        </div>
 
-        <label>Oben/Unten: <span id="val-z" class="val-disp">-50</span></label>
-        <input type="range" id="sl-z" min="-400" max="200" value="-50" oninput="updateAR()">
+        <div class="slider-group">
+            <label>Oben/Unten (Z): <span id="val-z" class="val-disp">-50</span></label>
+            <input type="range" id="sl-z" min="-400" max="200" value="-50" oninput="updateAR()">
+        </div>
     </div>
 
     <a-scene
@@ -125,28 +150,20 @@
         const valX = document.getElementById('val-x');
         const valZ = document.getElementById('val-z');
 
-        // UPDATE FUNKTION (Live)
+        // LIVE UPDATE
         window.updateAR = function() {
             let s = slS.value;
             let x = slX.value;
             let z = slZ.value;
-
-            // Update Text
             valS.innerText = s;
             valX.innerText = x;
             valZ.innerText = z;
-
-            // Update NFT Video
             arVideo.setAttribute('scale', `${s} ${s} ${s}`);
             arVideo.setAttribute('position', `${x} 0 ${z}`);
-
-            // Update Cheat Video (optional, falls du im Demo Modus testen willst)
-            // Im Cheat Modus ist Skalierung anders, wir ändern nur das NFT Video hier primär
         }
 
         // 1. CHECK FILES
-        const markerUrl = "https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset";
-        fetch(markerUrl).then(r => {
+        fetch("https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset").then(r => {
             if(r.ok) {
                 errorLog.innerHTML = "✅ GitHub OK";
                 errorLog.style.color = "#00ff00";
@@ -156,28 +173,43 @@
             }
         });
 
-        // 2. START APP
+        // 2. START APP (STRENGER AUDIO MODE)
         window.startApp = function() {
             startOverlay.style.display = 'none';
-            video.play().catch(e => {});
+
+            // Audio-Engine aufwecken, aber sofort knebeln
+            video.muted = true; // Sicherstellen, dass es stumm ist
+            video.play().then(() => {
+                video.pause();      // Sofort Pause
+                video.currentTime = 0; // Zurückspulen
+            }).catch(e => console.log("Audio Init Warning"));
         }
 
-        // 3. MARKER EVENTS
+        // 3. MARKER GEFUNDEN (Audio loslassen)
         document.querySelector('a-nft').addEventListener('markerFound', () => {
             statusBar.innerText = "✅ ERKANNT -> SCHIEBEN!";
             statusBar.style.borderColor = "#00ff00";
             statusBar.style.color = "#00ff00";
-            video.muted = false; video.play(); audio.play();
+
+            // Jetzt darf es tönen
+            video.muted = false;
+            video.play();
+            audio.play();
         });
 
+        // 4. MARKER VERLOREN (Audio stoppen)
         document.querySelector('a-nft').addEventListener('markerLost', () => {
             statusBar.innerText = "🔍 Suche...";
             statusBar.style.borderColor = "#ff3333";
             statusBar.style.color = "#ff3333";
-            video.muted = true; video.pause(); audio.pause();
+
+            // Sofort Ruhe
+            video.muted = true;
+            video.pause();
+            audio.pause();
         });
 
-        // 4. NOTFALL DEMO
+        // 5. NOTFALL DEMO
         window.forceTracking = function() {
             startOverlay.style.display = 'none';
             statusBar.innerText = "⚠️ DEMO MODUS";
@@ -185,11 +217,15 @@
             statusBar.style.color = "orange";
             cheatVideo.setAttribute('visible', 'true');
             video.muted = false; video.play(); audio.play();
-            alert("Hinweis: Die Slider funktionieren nur im echten AR Modus, nicht in der Demo!");
+            alert("Slider gehen nur im echten AR Modus!");
         }
 
+        // Extra Klick-Schutz
         window.addEventListener('click', () => {
-            if(!video.paused) { video.play(); audio.play(); }
+            // Nur abspielen, wenn wir wirklich tracken (oder Demo an ist)
+            if (statusBar.style.color === "rgb(0, 255, 0)" || statusBar.innerText.includes("DEMO")) {
+                if(video.paused) { video.play(); audio.play(); }
+            }
         });
     </script>
 </body>
