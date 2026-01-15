@@ -3,57 +3,30 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Master - Layout Fix</title>
+    <title>Mona Lisa AR - Final</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
-        /* Grundlayout */
+        /* Basis Layout */
         body { margin: 0; overflow: hidden; font-family: sans-serif; background: transparent; }
-        * { box-sizing: border-box; } /* Wichtig: Verhindert, dass Padding das Layout sprengt */
 
-        /* --- STATUS AMPEL (Kleiner & Oben) --- */
+        /* Video im Hintergrund (wichtig für iOS) */
+        video { object-fit: cover; }
+
+        /* --- STATUS AMPEL (Oben) --- */
         #status-bar {
-            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9); color: #ff3333;
-            padding: 5px 15px; border-radius: 20px; border: 2px solid #ff3333;
-            font-weight: bold; font-size: 12px; z-index: 9000; text-align: center;
-            white-space: nowrap;
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85); color: #ff3333;
+            padding: 8px 20px; border-radius: 30px; border: 2px solid #ff3333;
+            font-weight: bold; font-size: 14px; letter-spacing: 1px;
+            z-index: 9000; text-align: center; white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }
 
-        /* --- KALIBRIERUNGS PANEL (Verbessert) --- */
-        #calib-panel {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(0, 0, 0, 0.9); color: #00d2ff;
-            padding: 15px;
-            border-top: 3px solid #00d2ff;
-            z-index: 9999;
-            display: flex; flex-direction: column; gap: 8px;
-            max-height: 40vh; overflow-y: auto; /* Scrollbar falls zu klein */
-        }
-
-        /* Container für jeden Regler */
-        .slider-group {
-            display: flex; flex-direction: column;
-            width: 100%;
-        }
-
-        /* Beschriftung */
-        label {
-            display: flex; justify-content: space-between;
-            font-size: 14px; font-weight: bold; color: white; margin-bottom: 5px;
-        }
-
-        /* Die Zahl (Wichtig!) */
-        .val-disp { color: #00d2ff; font-family: monospace; font-size: 16px; }
-
-        /* Der Slider selbst */
-        input[type=range] {
-            width: 100%; height: 30px; accent-color: #00d2ff; cursor: pointer;
-        }
-
-        /* --- START SCREEN --- */
+        /* --- START SCREEN (Verdeckt alles bis Start) --- */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 10, 10, 1.0); z-index: 10000;
@@ -61,44 +34,42 @@
             color: white; text-align: center; padding: 20px;
         }
 
-        button {
-            padding: 15px 30px; font-size: 18px; font-weight: bold; width: 100%; max-width: 300px;
-            border: none; border-radius: 50px; cursor: pointer; margin-top: 15px;
-        }
-        .btn-start { background: #00d2ff; color: black; box-shadow: 0 0 15px #00d2ff; }
-        .btn-cheat { background: #ffaa00; color: black; font-size: 14px; margin-top: 40px; }
+        h1 { margin-bottom: 10px; font-size: 24px; letter-spacing: 2px; color: #00d2ff; }
 
-        #error-log { color: #888; margin-top: 20px; font-family: monospace; font-size: 12px; }
+        /* Buttons */
+        button {
+            width: 100%; max-width: 280px; padding: 18px;
+            font-size: 16px; font-weight: bold; text-transform: uppercase;
+            border: none; border-radius: 50px; cursor: pointer; margin-top: 20px;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+
+        .btn-start {
+            background: linear-gradient(45deg, #00d2ff, #0099ff);
+            color: white;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+        }
+
+        .btn-cheat {
+            background: transparent; border: 1px solid #555;
+            color: #888; font-size: 12px; margin-top: 60px; padding: 10px;
+        }
+
+        #error-log { color: #888; margin-top: 10px; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 
 <body>
-    <div id="status-bar">⏳ VERBINDE...</div>
+    <div id="status-bar">⏳ INITIALISIERE...</div>
 
     <div id="start-overlay">
-        <h1>KALIBRIERUNG</h1>
-        <div id="error-log">Prüfe Server...</div>
-        <button class="btn-start" onclick="startApp()">KAMERA STARTEN</button>
-        <button class="btn-cheat" onclick="forceTracking()">⚠️ DEMO / NOTFALL</button>
-    </div>
+        <h1>AR EXPERIENCE</h1>
+        <div id="error-log">Verbinde mit Server...</div>
 
-    <div id="calib-panel">
-        <div style="text-align:center; margin-bottom:5px; color:#aaa; font-size:12px;">Werte notieren!</div>
+        <button class="btn-start" onclick="startApp()">Erlebnis Starten</button>
 
-        <div class="slider-group">
-            <label>Größe: <span id="val-s" class="val-disp">150</span></label>
-            <input type="range" id="sl-s" min="10" max="400" value="150" oninput="updateAR()">
-        </div>
-
-        <div class="slider-group">
-            <label>Links/Rechts (X): <span id="val-x" class="val-disp">50</span></label>
-            <input type="range" id="sl-x" min="-200" max="400" value="50" oninput="updateAR()">
-        </div>
-
-        <div class="slider-group">
-            <label>Oben/Unten (Z): <span id="val-z" class="val-disp">-50</span></label>
-            <input type="range" id="sl-z" min="-400" max="200" value="-50" oninput="updateAR()">
-        </div>
+        <button class="btn-cheat" onclick="forceTracking()">⚠️ DEBUG / DEMO MODE</button>
     </div>
 
     <a-scene
@@ -119,17 +90,16 @@
             smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
 
             <a-video
-                id="ar-video"
                 src="#ki-video"
                 width="1" height="1.49"
-                position="50 0 -50"
+                position="12 0 -48"
                 rotation="-90 0 0"
-                scale="150 150 150">
+                scale="31 31 31">
             </a-video>
         </a-nft>
 
         <a-entity camera>
-             <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -4" width="1" height="1.49"></a-video>
+             <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -2" width="1" height="1.49"></a-video>
         </a-entity>
     </a-scene>
 
@@ -140,90 +110,78 @@
         const video = document.getElementById('ki-video');
         const audio = document.getElementById('ki-audio');
         const cheatVideo = document.getElementById('cheat-video');
-        const arVideo = document.getElementById('ar-video');
 
-        // SLIDER REFS
-        const slS = document.getElementById('sl-s');
-        const slX = document.getElementById('sl-x');
-        const slZ = document.getElementById('sl-z');
-        const valS = document.getElementById('val-s');
-        const valX = document.getElementById('val-x');
-        const valZ = document.getElementById('val-z');
-
-        // LIVE UPDATE
-        window.updateAR = function() {
-            let s = slS.value;
-            let x = slX.value;
-            let z = slZ.value;
-            valS.innerText = s;
-            valX.innerText = x;
-            valZ.innerText = z;
-            arVideo.setAttribute('scale', `${s} ${s} ${s}`);
-            arVideo.setAttribute('position', `${x} 0 ${z}`);
-        }
-
-        // 1. CHECK FILES
+        // --- 1. GITHUB CHECK ---
         fetch("https://bastiancurth.github.io/ba-ar-proto/assets/markers/painting.fset").then(r => {
             if(r.ok) {
-                errorLog.innerHTML = "✅ GitHub OK";
+                errorLog.innerHTML = "✅ System Bereit";
                 errorLog.style.color = "#00ff00";
                 statusBar.innerText = "🔍 BEREIT";
             } else {
-                errorLog.innerHTML = "❌ 404 Fehler";
+                errorLog.innerHTML = "❌ Server-Fehler (404)";
+                statusBar.innerText = "⚠️ ERROR";
             }
         });
 
-        // 2. START APP (STRENGER AUDIO MODE)
+        // --- 2. START APP (STRENGER AUDIO MODE) ---
         window.startApp = function() {
             startOverlay.style.display = 'none';
 
-            // Audio-Engine aufwecken, aber sofort knebeln
-            video.muted = true; // Sicherstellen, dass es stumm ist
+            // Audio-Context aufwecken, aber sofort stumm schalten
+            video.muted = true;
             video.play().then(() => {
-                video.pause();      // Sofort Pause
-                video.currentTime = 0; // Zurückspulen
-            }).catch(e => console.log("Audio Init Warning"));
+                video.pause();         // Sofort Pause
+                video.currentTime = 0; // Reset
+            }).catch(e => console.log("Audio Init ok"));
+
+            statusBar.innerText = "📷 SCANNE BILD...";
         }
 
-        // 3. MARKER GEFUNDEN (Audio loslassen)
+        // --- 3. MARKER GEFUNDEN ---
         document.querySelector('a-nft').addEventListener('markerFound', () => {
-            statusBar.innerText = "✅ ERKANNT -> SCHIEBEN!";
+            statusBar.innerText = "✅ ERKANNT";
             statusBar.style.borderColor = "#00ff00";
             statusBar.style.color = "#00ff00";
+            statusBar.style.backgroundColor = "rgba(0, 50, 0, 0.9)";
 
-            // Jetzt darf es tönen
+            // Audio & Video starten
             video.muted = false;
             video.play();
             audio.play();
         });
 
-        // 4. MARKER VERLOREN (Audio stoppen)
+        // --- 4. MARKER VERLOREN ---
         document.querySelector('a-nft').addEventListener('markerLost', () => {
-            statusBar.innerText = "🔍 Suche...";
+            statusBar.innerText = "🔍 Suche Mona Lisa...";
             statusBar.style.borderColor = "#ff3333";
             statusBar.style.color = "#ff3333";
+            statusBar.style.backgroundColor = "rgba(0, 0, 0, 0.85)";
 
-            // Sofort Ruhe
+            // Sofort stopp
             video.muted = true;
             video.pause();
             audio.pause();
         });
 
-        // 5. NOTFALL DEMO
+        // --- 5. NOTFALL DEMO ---
         window.forceTracking = function() {
             startOverlay.style.display = 'none';
             statusBar.innerText = "⚠️ DEMO MODUS";
             statusBar.style.borderColor = "orange";
             statusBar.style.color = "orange";
+
             cheatVideo.setAttribute('visible', 'true');
-            video.muted = false; video.play(); audio.play();
-            alert("Slider gehen nur im echten AR Modus!");
+
+            video.muted = false;
+            video.play();
+            audio.play();
         }
 
-        // Extra Klick-Schutz
+        // --- 6. KLICK-FIX ---
         window.addEventListener('click', () => {
-            // Nur abspielen, wenn wir wirklich tracken (oder Demo an ist)
-            if (statusBar.style.color === "rgb(0, 255, 0)" || statusBar.innerText.includes("DEMO")) {
+            // Wenn grün oder orange -> Abspielen erzwingen falls pausiert
+            const statusColor = window.getComputedStyle(statusBar).color;
+            if (statusColor === "rgb(0, 255, 0)" || statusBar.innerText.includes("DEMO")) {
                 if(video.paused) { video.play(); audio.play(); }
             }
         });
