@@ -530,8 +530,15 @@
     // --- 1. URL AUSWERTEN ---
     // ?werk=mona  -> Einzelwerk (QR-Code am Bild)
     // ?modus=kamera -> Kamera-Modus: erkennt selbst, welches Werk vor der Linse ist
+    // ?debug=1 -> Konsole direkt auf dem Bildschirm (Eruda), fuer Handy-Tests ohne Kabel/Mac
     // ohne Parameter -> Startseite mit Kamera-Modus + Lexikon
     const params = new URLSearchParams(location.search);
+    if (params.get("debug") === "1") {
+        const erudaSkript = document.createElement("script");
+        erudaSkript.src = "https://cdnjs.cloudflare.com/ajax/libs/eruda/3.0.1/eruda.min.js";
+        erudaSkript.onload = () => window.eruda && window.eruda.init();
+        document.head.appendChild(erudaSkript);
+    }
     const werkId = params.get("werk");
     const kameraModus = params.get("modus") === "kamera";
     const galerieModus = params.get("modus") === "galerie";
