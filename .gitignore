@@ -1,0 +1,13 @@
+# GitHub-Upload: nur die Web-App gehoert online.
+# Der komplette Abgabe-Ordner, Ausgelagertes und Backups bleiben lokal/privat.
+Abgabe_Masterarbeit_Curth/
+privat_nicht_abgeben/
+_backups_code/
+*.TMP
+~$*
+*.part
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+._*

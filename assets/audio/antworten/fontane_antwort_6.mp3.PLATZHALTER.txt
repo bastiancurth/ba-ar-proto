@@ -1,0 +1,12 @@
+PLATZHALTER fuer: fontane_antwort_6.mp3
+Werk:  Plauer Straße um 1920
+Frage: Was wurde aus dem Haus?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks - Persona: Weinhaendler F. W. Wiesike):
+
+Das Geschäftshaus in der Plauer Straße 19 brannte in der Nacht zum 1. Mai 1945 nieder, nur die alten Gewölbekeller blieben erhalten. Geblieben ist auch die Fotografie um 1920 mit dem Plauer Torturm, genau das Bild, das hier vor Ihnen hängt.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

@@ -1,0 +1,13 @@
+PLATZHALTER fuer: knitter_antwort_4.mp3
+Werk:  Frauen auf einer Bank
+Frage: Wer ist dieser Zille?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
+ohne Hall! Das Geister-Echo erzeugt die App selbst:
+
+Heinrich Zille, der berühmte Berliner Zeichner der kleinen Leute. Unser Knitter hatte denselben Blick: karikaturhaft, warmherzig und mit einem frechen Spruch unter jedem Bild. Nur berühmt wurde er damit nie.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

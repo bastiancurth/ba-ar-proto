@@ -1,0 +1,13 @@
+PLATZHALTER fuer: knitter_antwort_1.mp3
+Werk:  Frauen auf einer Bank
+Frage: Wer war Fritz Knitter?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
+ohne Hall! Das Geister-Echo erzeugt die App selbst:
+
+Das wüssten wir auch gern genauer! In den Adressbüchern taucht er auf: 1913 als Beamter in der Vereinstraße, 1938 als städtischer Arbeiter in der Roonstraße. Ob es derselbe Mann war und was dazwischen geschah, weiß niemand. Nur seine Zeichnungen sind geblieben.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

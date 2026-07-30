@@ -1,0 +1,13 @@
+PLATZHALTER fuer: knitter_antwort_2.mp3
+Werk:  Frauen auf einer Bank
+Frage: Warum habt ihr auf Verpackungspapier gemalt?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
+ohne Hall! Das Geister-Echo erzeugt die App selbst:
+
+Nicht wir, der Knitter! Feines Zeichenpapier konnte er sich wohl nicht leisten. Also nahm er, was da war: braunes Verpackungspapier. Heute macht genau das seine Blätter so besonders.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

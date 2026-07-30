@@ -1,0 +1,100 @@
+============================================================
+SO FUEGST DU EIN NEUES WERK HINZU (ohne Programmierkenntnisse)
+============================================================
+
+Du brauchst: das Video (MP4, mit eingeschnittener Erzaehl-
+stimme!), dieselbe Erzaehlspur nochmal einzeln als MP3 (fuer
+den Vorlesen-Knopf an der Geschichte), die drei Marker-
+Dateien (.iset / .fset / .fset3) und die gepruegten Fakten
+mit Quellen.
+
+SCHRITT 1: Dateien ablegen
+  - Video  nach  assets/videos/DEINWERK.mp4
+  - Audio  nach  assets/audio/DEINWERK.mp3
+  - Marker nach  assets/markers/DEINWERK/  (alle drei Dateien,
+    gleicher Name, z. B. deinwerk.iset usw.)
+  Marker erstellt man aus dem Originalbild mit dem
+  AR.js NFT-Marker-Creator (carnaux.github.io/NFT-Marker-Creator).
+  WICHTIG: Genau das Bild verwenden, das spaeter auch
+  ausgedruckt wird! (Louvre-Lektion aus der Masterarbeit)
+
+SCHRITT 2: werke.js oeffnen (mit Notepad)
+  - Den Vorlagen-Block (zwischen /* und */) kopieren
+  - Vor der letzten eckigen Klammer ] einfuegen
+  - /* und */ beim neuen Block loeschen
+  - id, titel, untertitel, Dateipfade, geschichte, fakten
+    und quellen anpassen
+  - Speichern als UTF-8
+
+SCHRITT 3: Feinjustierung (verstecktes Feature)
+  - Seite oeffnen: index_v2.html?werk=DEINE-ID
+  - Erlebnis starten, Marker anvisieren
+  - 5x schnell auf die Statusleiste oben tippen
+    (am PC: Taste K druecken)
+  - Mit den +/- Tasten Position, Rotation und Groesse
+    einstellen, bis das Video exakt auf dem Bild liegt
+  - "Werte kopieren" druecken und den Block in werke.js
+    beim Werk unter kalibrierung einfuegen
+
+SCHRITT 4: QR-Code erzeugen
+  - Ziel-URL:  https://DEINE-SEITE/index_v2.html?werk=DEINE-ID
+  - Beliebigen QR-Generator nutzen, ausdrucken, neben das
+    Werk haengen. Fertig.
+
+PRUEF-CHECKLISTE vor dem Aufhaengen:
+  [ ] Startbildschirm zeigt alle vier Checks gruen
+  [ ] Video liegt passgenau auf dem gedruckten Bild
+  [ ] Ton (im Video) startet bei Erkennung, pausiert bei Verlust
+  [ ] Vorlesen-Knopf an der Geschichte spielt die MP3
+  [ ] Fakten-Panel (i-Knopf): Geschichte, Fakten, Quellen korrekt
+  [ ] KI-Hinweis wird angezeigt (Pflicht ab August 2026)
+
+============================================================
+NEU: MODI, STANDBILDER UND VERTONTE CHAT-ANTWORTEN
+============================================================
+KAMERA-MODUS:  index_v2.html?modus=kamera
+  Die App laedt alle Marker gleichzeitig und erkennt selbst,
+  welches Werk vor der Linse ist. Bei Erkennung erscheinen
+  Titel, Overlay und der Info-Knopf zum passenden Werk.
+  Tipp: Auf aelteren Handys einzelne Werke in werke.js mit
+  imKameraModus: false ausnehmen (jeder Marker kostet Leistung).
+
+LEXIKON: Die Startseite (Aufruf ohne Parameter) listet alle
+  Werke zum Nachlesen und Chatten, auch ohne Kamera.
+
+STANDBILD SOLANGE DAS VIDEO FEHLT:
+  Bild nach assets/bilder/<id>.jpg legen (gleiches Motiv wie
+  der Marker!). Es wird bei Erkennung anstelle des Videos
+  eingeblendet, perfekt fuer Demos vor Fertigstellung.
+
+IDLE-LOOP UND GESCHICHTE (zwei Videos pro Werk):
+  <werk>.mp4       die vertonte Geschichte (Stimme eingeschnitten)
+  <werk>_idle.mp4  stummer Kurz-Loop: das Bild lebt still, waehrend
+                   man chattet oder einfach nur schaut. Die Geschichte
+                   startet ueber den Knopf "Meine Geschichte hoeren"
+                   und kehrt am Ende von selbst in den Loop zurueck.
+  Idle-Datei ablegen, dann in werke.js die videoIdle-Zeile beim
+  Werk einkommentieren. Ohne Idle-Loop laeuft alles wie bisher.
+
+GEISTER-ECHO: Chat-Antworten bekommen automatisch einen leichten
+  Hall, als spraeche das Werk aus dem Rahmen. Die MP3s deshalb
+  TROCKEN (ohne Hall) produzieren.
+
+VORLESEN (eingebaut, ohne Zusatzkosten):
+  Jede Chat-Antwort wird automatisch mit der Browser-Stimme
+  vorgelesen (gedrosselte Lautstaerke). Der Stopp-Knopf im Chat
+  haelt die Stimme an, eine neue Frage stoppt sie ebenfalls,
+  nichts ueberlappt sich. "Vorlesen: an/aus" schaltet die
+  Funktion komplett ab.
+
+ZURUECK ZUR UEBERSICHT: Der runde Home-Knopf oben links
+  (und der Link auf dem Startbildschirm) fuehrt jederzeit
+  zurueck zur Werkuebersicht.
+
+VERTONTE CHAT-ANTWORTEN (ElevenLabs, optional statt Browser-Stimme):
+  Pro Antwort eine MP3 mit derselben Stimme wie die Erzaehlung
+  einsprechen lassen und nach assets/audio/antworten/ legen.
+  Dann in werke.js beim Dialog-Eintrag ergaenzen:
+    audio: "assets/audio/antworten/mona_ruhm.mp3"
+  Die App spielt die Antwort automatisch und zeigt ein
+  Lautsprecher-Symbol zum Wiederholen.

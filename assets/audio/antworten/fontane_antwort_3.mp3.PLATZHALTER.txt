@@ -1,0 +1,12 @@
+PLATZHALTER fuer: fontane_antwort_3.mp3
+Werk:  Plauer Straße um 1920
+Frage: Wer war Carl Ferdinand Wiesike?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks - Persona: Weinhaendler F. W. Wiesike):
+
+Mein Bruder draußen in Plaue – Gutsbesitzer, Verehrer Schopenhauers und der Gastgeber des Herrn Fontane. Zwischen 1874 und 1880 kam der Dichter viele Male; seine Tage dort teilte er, wie er selbst schrieb, zwischen Schopenhauer, altem Rheinwein und Naturgenuss.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

@@ -1,0 +1,13 @@
+PLATZHALTER fuer: mona_antwort_2.mp3
+Werk:  Mona Lisa
+Frage: Wer ist die Frau auf dem Bild?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
+ohne Hall! Das Geister-Echo erzeugt die App selbst:
+
+Vermutlich bin ich Lisa del Giocondo, die Frau eines Florentiner Seidenhändlers. Leonardo begann um 1503 mit dem Porträt und arbeitete viele Jahre daran.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

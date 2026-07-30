@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#00BAE5">
+    <title>Das lebendige Bild: WebAR-Geschichtenerzähler</title>
+
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <!-- Inhalte: alle Werke, Fakten und Kalibrierwerte liegen in werke.js -->
+    <script src="werke.js"></script>
+
+    <style>
+        :root {
+            /* Farbwelt der TH Brandenburg (aus der Praesentationsvorlage):
+               Cyan #00BAE5 als Hauptfarbe, Logo-Rot #CE1126 als Akzent */
+            --thb-cyan: #00BAE5;
+            --thb-cyan-dunkel: #0090b3;
+            --thb-rot: #CE1126;
+            --akzent: #00BAE5;
+            --papier: #ffffff;
+            --flaeche: #f2f7f9;
+            --rand: #dbe6ea;
+            --text: #1c2733;
+            --text-leise: #5c6f7d;
+            --ok: #1e9e5a; --warn: #c77700; --fehler: #CE1126;
+            --radius: 16px;
+            --safe-o: env(safe-area-inset-top, 0px);
+            --safe-u: env(safe-area-inset-bottom, 0px);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; overflow: hidden; color: var(--text);
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        video { object-fit: cover; }
+        button { font-family: inherit; cursor: pointer; border: none; }
+
+        /* ============ STATUS-PILLE (oben, gut lesbar auch ueber dem Kamerabild) ============ */
+        #status-bar {
+            position: fixed; top: calc(12px + var(--safe-o)); left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.94); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            color: var(--fehler); border: 2px solid var(--fehler);
+            padding: 9px 18px; border-radius: 999px;
+            font-weight: 700; font-size: clamp(12px, 3.4vw, 14px); letter-spacing: 0.4px;
+            z-index: 9000; white-space: nowrap; max-width: 92vw; overflow: hidden;
+            box-shadow: 0 4px 14px rgba(28,39,51,0.18); transition: color .3s, border-color .3s;
+        }
+        #status-punkt { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none;
+                        animation: puls 1.6s ease-in-out infinite; }
+        @keyframes puls { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity: .45; transform: scale(.8);} }
+
+        /* ============ START-OVERLAY (heller THB-Look wie die PPT-Vorlage) ============ */
+        #start-overlay {
+            position: fixed; inset: 0; z-index: 10000; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center;
+            padding: calc(20px + var(--safe-o)) 22px calc(28px + var(--safe-u));
+            background: var(--papier); text-align: center;
+        }
+        .thb-logo { width: min(250px, 60vw); align-self: flex-start; margin: 4px 0 18px; }
+        .cyanblock {
+            width: 100%; max-width: 560px; background: var(--thb-cyan);
+            border-radius: var(--radius); padding: 26px 26px 22px; color: #fff;
+            text-align: left; margin-bottom: 18px;
+            box-shadow: 0 10px 26px rgba(0,186,229,0.28);
+        }
+        .ov-badge { color: rgba(255,255,255,0.85); font-size: 11px; font-weight: 700;
+                    letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+        #ov-titel { margin: 0; font-size: clamp(24px, 6vw, 34px); font-weight: 800;
+                    line-height: 1.15; color: #fff; }
+        #ov-untertitel { color: rgba(255,255,255,0.92); font-size: clamp(12px, 3.6vw, 14px);
+                         margin-top: 8px; line-height: 1.5; }
+
+        #system-check { width: 100%; max-width: 560px; margin: 0 0 6px; text-align: left;
+                        background: var(--flaeche); border: 1px solid var(--rand);
+                        border-radius: var(--radius); padding: 12px 16px; }
+        .check-zeile { display: flex; align-items: center; gap: 10px; padding: 5px 0;
+                       font-size: 13px; color: var(--text-leise); }
+        .check-zeile .icon { width: 20px; text-align: center; flex: none; }
+        .check-zeile.ok { color: #14683c; } .check-zeile.warn { color: #8a5200; }
+        .check-zeile.fehler { color: var(--thb-rot); }
+        #ladebalken-rahmen { height: 6px; background: #e2ebef; border-radius: 999px;
+                             overflow: hidden; margin: 8px 0 2px; display: none; }
+        #ladebalken { height: 100%; width: 0%; border-radius: 999px;
+                      background: linear-gradient(90deg, var(--thb-cyan-dunkel), var(--thb-cyan));
+                      transition: width .35s ease; }
+
+        .btn { width: 100%; max-width: 380px; padding: 16px 18px; margin-top: 12px;
+               font-size: 15px; font-weight: 700; border-radius: 999px; transition: transform .12s, filter .2s; }
+        .btn:active { transform: scale(.97); }
+        .btn-start { background: linear-gradient(120deg, var(--thb-cyan), var(--thb-cyan-dunkel));
+                     color: #fff; box-shadow: 0 8px 22px rgba(0,186,229,.35); }
+        .btn-start:disabled { filter: grayscale(.6) opacity(.55); box-shadow: none; }
+        .btn-lesen { background: #fff; border: 2px solid var(--thb-cyan); color: var(--thb-cyan-dunkel); }
+        /* alte .btn-cheat-Kleinstil-Regel am 19.07.2026 durch grosse Variante ersetzt */
+
+        /* ============ WERKAUSWAHL / LEXIKON ============ */
+        #werk-menu { display: none; position: fixed; inset: 0; z-index: 11000; overflow-y: auto;
+                     background: var(--papier);
+                     padding: calc(20px + var(--safe-o)) 20px calc(30px + var(--safe-u)); }
+        #werk-menu .inner { max-width: 620px; margin: 0 auto; }
+        #werk-menu h1 { font-size: 26px; margin: 6px 0 4px; color: var(--text); }
+        #werk-menu p { color: var(--text-leise); font-size: 13.5px; margin-bottom: 16px; }
+        .werk-card { display: block; background: #fff; border: 1px solid var(--rand);
+                     border-radius: var(--radius); padding: 16px 18px; margin: 12px 0;
+                     color: var(--text); text-decoration: none;
+                     box-shadow: 0 3px 12px rgba(28,39,51,0.07);
+                     transition: transform .12s, border-color .2s; }
+        .werk-card:active { transform: scale(.98); }
+        .werk-card:hover { border-color: var(--thb-cyan); }
+        .werk-card b { display: block; font-size: 17px; margin-bottom: 3px; }
+        .werk-card span { color: var(--text-leise); font-size: 12.5px; }
+        .werk-card .pfeil { float: right; color: var(--thb-cyan); font-size: 18px; margin-top: 6px; }
+        .badge-produktion { display: inline-block; margin-top: 7px; padding: 3px 10px; border-radius: 999px;
+                            font-size: 10.5px; font-weight: 700; letter-spacing: .5px;
+                            background: #fff4e2; color: #8a5200; border: 1px solid #e8c48a; }
+        #produktion-info { display: none; width: 100%; max-width: 560px; margin: 10px 0 2px;
+                           background: #fff4e2; border: 1px dashed #e8c48a;
+                           border-radius: var(--radius); padding: 13px 16px;
+                           color: #6e4300; font-size: 13px; line-height: 1.55; text-align: left; }
+
+        /* ============ FAKTEN: BUTTON + BOTTOM SHEET ============ */
+        #fakten-btn {
+            position: fixed; right: 16px; bottom: calc(18px + var(--safe-u)); z-index: 9500;
+            width: 58px; height: 58px; border-radius: 50%; display: none;
+            align-items: center; justify-content: center; font-size: 23px; font-weight: 800;
+            background: var(--thb-rot); color: #fff; border: none;
+            box-shadow: 0 8px 22px rgba(206,17,38,.4);
+        }
+        #fakten-panel {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 9800;
+            background: var(--papier); border: 1px solid var(--rand); border-bottom: none;
+            border-radius: 22px 22px 0 0; max-height: 76vh; overflow-y: auto;
+            padding: 10px 22px calc(30px + var(--safe-u));
+            transform: translateY(105%); transition: transform .35s cubic-bezier(.2,.9,.25,1);
+            box-shadow: 0 -12px 40px rgba(28,39,51,.25);
+        }
+        #fakten-panel.offen { transform: translateY(0); }
+        .griff { width: 42px; height: 5px; border-radius: 999px; background: var(--rand); margin: 6px auto 12px; }
+        #fakten-panel h2 { color: var(--text); font-size: 19px; margin: 2px 0 2px; }
+        #fakten-panel h3 { color: var(--thb-cyan-dunkel); font-size: 12.5px; margin: 18px 0 7px;
+                           text-transform: uppercase; letter-spacing: 1.6px; }
+        #p-untertitel { color: var(--text-leise); font-size: 12.5px; }
+        #fakten-panel p, #fakten-panel li { font-size: 14.5px; line-height: 1.6; }
+        #fakten-panel ul { padding-left: 18px; margin: 4px 0; }
+        #fakten-panel li { margin-bottom: 8px; }
+        #quellen-liste li { color: var(--text-leise); font-size: 12.5px; }
+        #ki-hinweis { display: none; margin-top: 16px; padding: 11px 13px;
+                      border: 1px dashed var(--rand); border-radius: 12px;
+                      background: var(--flaeche);
+                      color: var(--text-leise); font-size: 12px; line-height: 1.5; }
+        #panel-schliessen { position: absolute; top: 14px; right: 16px; width: 34px; height: 34px;
+                            border-radius: 50%; background: var(--flaeche); color: var(--text);
+                            border: 1px solid var(--rand); font-size: 15px; }
+
+        @media (min-width: 760px) {
+            #fakten-panel { left: auto; right: 22px; bottom: 22px; width: 440px;
+                            border-radius: 22px; border-bottom: 1px solid var(--rand);
+                            max-height: 80vh; transform: translateX(120%); }
+            #fakten-panel.offen { transform: translateX(0); }
+            #fakten-btn { right: 24px; bottom: 24px; }
+        }
+
+        /* Tabs im Panel */
+        .tabbar { display: flex; gap: 8px; margin: 14px 0 6px; }
+        .tab { flex: 1; padding: 10px; border-radius: 999px; font-size: 13px; font-weight: 700;
+               background: var(--flaeche); color: var(--text-leise); border: 1px solid var(--rand); }
+        .tab.aktiv { background: var(--thb-cyan); color: #fff; border-color: transparent; }
+        .tabseite { display: none; } .tabseite.aktiv { display: block; }
+
+        /* Chat mit dem Kunstwerk */
+        #chat-verlauf { display: flex; flex-direction: column; gap: 10px; padding: 10px 2px 6px;
+                        min-height: 160px; }
+        .blase { max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.5; }
+        .blase.werk { align-self: flex-start; background: var(--flaeche); border: 1px solid var(--rand);
+                      color: var(--text); border-bottom-left-radius: 4px; }
+        .blase.ich { align-self: flex-end; background: var(--thb-cyan);
+                     color: #fff; border-bottom-right-radius: 4px; }
+        .blase.tippt { color: var(--text-leise); font-style: italic; }
+        .blase.tippt::after { content: "…"; animation: tippen 1.2s infinite; }
+        @keyframes tippen { 0% { content: "·"; } 33% { content: "··"; } 66% { content: "···"; } }
+        #chat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px; }
+        .chip { padding: 8px 13px; border-radius: 999px; font-size: 12.5px;
+                background: #fff; border: 1.5px solid var(--thb-cyan); color: var(--thb-cyan-dunkel); }
+        .chip:active { transform: scale(.96); }
+        #chat-eingabe { display: flex; gap: 8px; margin-top: 6px; }
+        #chat-feld { flex: 1; padding: 12px 16px; border-radius: 999px; border: 1px solid var(--rand);
+                     background: #fff; color: var(--text); font-size: 14px; outline: none; }
+        #chat-feld:focus { border-color: var(--thb-cyan); }
+        #chat-senden { width: 46px; height: 46px; border-radius: 50%; flex: none;
+                       background: var(--thb-cyan); color: #fff;
+                       font-size: 18px; font-weight: 800; }
+        #chat-hinweis { color: var(--text-leise); font-size: 11px; margin-top: 10px; line-height: 1.45; }
+
+        /* ============ EXPERIMENT-RUNDGANG (?modus=kamera&tour=1) ============ */
+        #tour-karte { display:none; position:fixed; left:12px; right:12px; top:64px; z-index:55;
+            background:rgba(8,12,16,.93); border:1px solid rgba(255,255,255,.15); border-radius:16px;
+            padding:12px 14px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+        #tour-schritt { font-size:.78rem; letter-spacing:.08em; text-transform:uppercase; opacity:.7; margin:0 0 4px; }
+        #tour-titel { margin:0 0 6px; font-size:1.05rem; font-weight:800; }
+        #tour-text { margin:0 0 10px; font-size:.95rem; line-height:1.45; }
+        #tour-status { font-size:.85rem; margin:0 0 8px; opacity:.9; }
+        .tour-knoepfe { display:flex; gap:8px; }
+        .tour-knoepfe .btn { flex:1; padding:10px 0; font-size:.95rem; }
+        #tour-punkte { display:flex; gap:6px; justify-content:center; margin-top:10px; }
+        #tour-punkte i { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.25); }
+        #tour-punkte i.aktiv { background:var(--akzent); }
+        #tour-punkte i.fertig { background:var(--ok); }
+
+        /* ============ PASST-CHECK (einmaliger Assistent nach dem ersten Tracking) ============ */
+        #passt-panel { display:none; position:fixed; left:12px; right:12px; bottom:14px; z-index:60;
+            background:rgba(8,12,16,.94); border:1px solid rgba(255,255,255,.15); border-radius:16px;
+            padding:14px 16px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+        #passt-panel p { margin:0 0 10px; font-size:1.02rem; font-weight:600; text-align:center; }
+        .passt-knoepfe { display:flex; gap:10px; }
+        .passt-knoepfe .btn { flex:1; }
+        .passt-zeile { display:flex; align-items:center; gap:10px; margin:8px 0; }
+        .passt-zeile span { width:64px; font-size:.95rem; opacity:.85; }
+        .passt-zeile button { flex:1; font-size:1.3rem; padding:10px 0; border-radius:12px; border:none;
+            background:rgba(255,255,255,.12); color:#fff; }
+        .passt-zeile button:active { background:rgba(255,255,255,.28); }
+        #passt-fertig { width:100%; margin-top:10px; }
+
+        /* ============ JUSTIER-MODUS (versteckt; dunkel, weil er ueber dem Kamerabild liegt) ============ */
+        #kalib-panel {
+            display: none; position: fixed; left: 12px; right: 12px;
+            bottom: calc(12px + var(--safe-u)); z-index: 9900;
+            background: rgba(15,20,25,0.95); border: 1.5px solid #ffb347;
+            border-radius: var(--radius); color: #fff; padding: 14px 16px; font-size: 13px;
+            max-width: 560px; margin: 0 auto; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+        }
+        #kalib-panel h3 { margin: 0 0 10px; color: #ffb347; font-size: 14px; }
+        .kalib-zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+        .kalib-zeile label { width: 80px; color: #ffd9a3; font-size: 12px; }
+        .kalib-zeile button { width: 42px; padding: 9px 0; border-radius: 10px;
+                              background: #2c3844; color: #fff; font-size: 16px; font-weight: 700; }
+        .kalib-zeile .wert { min-width: 120px; font-family: ui-monospace, Consolas, monospace; color: #9de09d; }
+        #kalib-step { background: #2c3844; color: #fff; border: none; border-radius: 10px; padding: 9px; }
+        .kalib-aktionen { display: flex; gap: 8px; margin-top: 12px; }
+        .kalib-aktionen button { flex: 1; padding: 11px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+        #kalib-kopieren { background: #ffb347; color: #000; }
+        #kalib-reset, #kalib-zu { background: #2c3844; color: #fff; }
+
+        /* ============ HOME / ZURUECK ============ */
+        #home-btn { position: fixed; top: calc(12px + var(--safe-o)); left: 14px; z-index: 9000;
+                    width: 44px; height: 44px; border-radius: 50%; display: none;
+                    align-items: center; justify-content: center; text-decoration: none;
+                    background: rgba(255,255,255,0.94); border: 2px solid var(--thb-rot);
+                    color: var(--thb-rot); font-size: 20px; font-weight: 800;
+                    box-shadow: 0 4px 14px rgba(28,39,51,0.18); }
+        .ov-zurueck { display: block; width: 100%; max-width: 380px; padding: 16px 18px;
+                      margin: 12px auto 0; box-sizing: border-box; font-size: 15px; font-weight: 700;
+                      border-radius: 999px; text-align: center; text-decoration: none;
+                      background: #fff; border: 2px solid var(--thb-cyan); color: var(--thb-cyan-dunkel); }
+        .ov-zurueck:hover { filter: brightness(.96); }
+        .btn-cheat { background: #fff; border: 2px solid var(--rand); color: var(--text); }
+        .galerie-pfeil { position: fixed; top: 50%; transform: translateY(-50%); z-index: 60;
+            width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+            background: rgba(8,12,16,.7); color: #fff; font-size: 26px; font-weight: 800; }
+        #galerie-links { left: 14px; } #galerie-rechts { right: 14px; }
+        #galerie-hinweis { position: fixed; left: 50%; transform: translateX(-50%);
+            bottom: 18px; z-index: 60; background: rgba(8,12,16,.78); color: #fff;
+            padding: 10px 18px; border-radius: 999px; font-size: 14px; }
+        .modus-knoepfe { margin: 6px 0 14px; }
+        #anleitung-kasten { text-align: left; background: #f2f7f9; border: 2px solid var(--thb-cyan);
+            border-radius: 14px; padding: 12px 16px; margin: 10px 0; font-size: 13.5px; line-height: 1.55; }
+
+        /* ============ VORLESEN (Text-to-Speech) ============ */
+        #chat-audio-zeile { display: flex; gap: 8px; margin: 4px 0 8px; }
+        #chat-audio-zeile button { padding: 7px 13px; border-radius: 999px; font-size: 12px;
+                                   font-weight: 700; background: #fff;
+                                   border: 1.5px solid var(--thb-rot); color: var(--thb-rot); }
+        .mini-vorlesen { margin-left: 10px; padding: 4px 12px; border-radius: 999px;
+                         font-size: 11px; font-weight: 700; background: #fff;
+                         border: 1.5px solid var(--thb-rot); color: var(--thb-rot);
+                         vertical-align: middle; letter-spacing: 0; text-transform: none; }
+
+        /* ============ GESCHICHTE-KNOPF (Idle-Loop vs. erzaehltes Video) ============ */
+        #freihand-layer { display: none; position: fixed; inset: 0; z-index: 20;
+            background-color: #0b0f14;
+            background-size: cover; background-position: center; }
+        #freihand-layer .buehne-ambiente { position: absolute; inset: 0; width: 100%; height: 100%;
+            object-fit: cover; filter: blur(48px) saturate(1.1) brightness(.85);
+            transform: scale(1.15); z-index: 0; }
+        #freihand-layer .buehne-bild { position: absolute; z-index: 0;
+            -webkit-mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%),
+                                linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+            -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%),
+                        linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+            mask-composite: intersect; }
+        #freihand-layer .weich-medium {
+            border-radius: 0 !important; box-shadow: none !important;
+            -webkit-mask-image: linear-gradient(to right, transparent 0, #000 4%, #000 96%, transparent 100%),
+                                linear-gradient(to bottom, transparent 0, #000 4%, #000 96%, transparent 100%);
+            -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent 0, #000 4%, #000 96%, transparent 100%),
+                        linear-gradient(to bottom, transparent 0, #000 4%, #000 96%, transparent 100%);
+            mask-composite: intersect; }
+        #freihand-layer::after { content: ""; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.45) 100%); }
+        #freihand-layer video, #freihand-layer .freihand-standbild { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            max-width: 86vw; max-height: 68vh; border-radius: 6px; z-index: 1;
+            box-shadow: 0 18px 60px rgba(0,0,0,.65); }
+        #freihand-btn { position: fixed; right: 16px; top: 64px; z-index: 45; display: none;
+            background: rgba(8,12,16,.85); color: #fff; border: 1px solid rgba(255,255,255,.25);
+            border-radius: 999px; padding: 4px; font-size: .85rem; font-weight: 600; }
+        #freihand-btn span { display: inline-block; padding: 7px 12px; border-radius: 999px; opacity: .65; }
+        #freihand-btn span.an { background: var(--akzent); color: #06232b; opacity: 1; font-weight: 800; }
+        #geschichte-btn { position: fixed; left: 50%; transform: translateX(-50%);
+                          bottom: calc(24px + var(--safe-u)); z-index: 9400; display: none;
+                          padding: 13px 26px; border-radius: 999px; font-size: 14px; font-weight: 800;
+                          background: linear-gradient(120deg, var(--thb-cyan), var(--thb-cyan-dunkel));
+                          color: #fff; box-shadow: 0 8px 22px rgba(0,140,180,.45); }
+
+        /* ============ TOAST ============ */
+        #toast { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px);
+                 bottom: calc(90px + var(--safe-u)); z-index: 9600; opacity: 0; pointer-events: none;
+                 background: rgba(255,255,255,0.97); border: 1.5px solid #e8c48a; color: #6e4300;
+                 padding: 10px 16px; border-radius: 12px; font-size: 12.5px; max-width: 86vw;
+                 box-shadow: 0 6px 18px rgba(28,39,51,.2);
+                 transition: opacity .3s, transform .3s; }
+        #toast.zeig { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+
+<body>
+    <div id="status-bar"><span id="status-punkt"></span><span id="status-text">INITIALISIERE …</span></div>
+    <a id="home-btn" href="index_v2.html" aria-label="Zurück zur Werkübersicht">⌂</a>
+
+    <!-- Werkauswahl, falls die Seite ohne ?werk=... aufgerufen wird -->
+    <div id="werk-menu"><div class="inner">
+        <img class="thb-logo" src="assets/thb_logo.svg" alt="Technische Hochschule Brandenburg">
+        <div class="cyanblock" style="max-width:none">
+            <div class="ov-badge">Das lebendige Bild · Brandenburg an der Havel</div>
+            <h1 style="color:#fff;margin:0;font-size:26px">Wähle ein Werk</h1>
+        </div>
+        <p style="font-size:14.5px"><b>Das lebendige Bild</b> erweckt historische Bildmedien aus Brandenburg an der Havel zum Leben:
+        Richte die Kamera auf eines der sieben Werke, und das Bild erwacht direkt im Kamerabild und erzählt seine Geschichte
+        als kurzer, vertonter Film. Danach kannst du dir mehr vorlesen lassen, Fakten nachschlagen und dem Werk im Chat Fragen stellen.</p>
+        <details id="intro-details" style="text-align:left;font-size:13px;margin:0 0 12px;color:#3b4a56">
+            <summary style="cursor:pointer;font-weight:700;color:#0090b3">Wie funktioniert das?</summary>
+            Die Werke selbst sind die Marker: Die App vergleicht das Kamerabild mit den hinterlegten Originalen und erkennt
+            automatisch, welches Werk vor der Linse ist; ein einziger QR-Code genügt für die ganze Anwendung.
+            Die kurzen Filme („Living Paintings“) wurden mit generativer KI aus den Originalbildern erzeugt und redaktionell
+            gegen belegte Quellen geprüft; was erzählt statt belegt ist, kennzeichnet die App unter „Wahr oder erzählt?“.
+            Ohne Kamera funktioniert alles auch: im Lexikon (Demo-Ansicht) oder im Galerie-Modus, bei dem ein Monitor die
+            Werke anzeigt und Handys sie vom Bildschirm scannen. Ein Prototyp im Rahmen der Masterarbeit von Bastian Curth (THB, 2026).
+        </details>
+        <div class="modus-knoepfe" id="menu-stufe1">
+            <a class="btn btn-start" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;cursor:pointer" onclick="menuBereich('ar')">📷 AR-Erlebnis</a>
+            <a class="btn ov-zurueck" style="margin-top:12px;cursor:pointer" onclick="menuBereich('lexikon')">📖 Lexikon: Werke ansehen (ohne Kamera)</a>
+        </div>
+        <div id="bereich-ar" style="display:none">
+            <a class="ov-zurueck" style="cursor:pointer;max-width:200px;padding:8px 14px;font-size:13px;margin:0 auto 4px" onclick="menuBereich('start')">← Zurück</a>
+            <a class="btn btn-start" href="index_v2.html?modus=kamera" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">📱 Scannen mit der Kamera</a>
+            <a class="btn ov-zurueck" href="index_v2.html?modus=galerie" style="margin-top:12px">🖼 Galerie-Modus (Monitor zeigt die Werke)</a>
+            <a class="btn ov-zurueck" href="index_v2.html?modus=kamera&tour=1" style="margin-top:12px">🚶 Geführte Tour (Experiment-Rundgang, 7 Stationen)</a>
+        <div id="anleitung-kasten">
+            <b>So läuft das Experiment ohne Galeriewand:</b><br>
+            1. Auf einem PC/Monitor den <b>Galerie-Modus</b> starten; er zeigt die Werke bildschirmfüllend auf ihrer Bühne (mit den Pfeilen wechseln).<br>
+            2. Auf dem Handy dieselbe Web-App öffnen und <b>Scannen mit der Kamera</b> wählen.<br>
+            3. Handy auf den Monitor richten; die App erkennt das angezeigte Werk und das Bild erwacht auf dem Handy.<br>
+            4. Ohne zweites Gerät: unten ein Werk wählen und im <b>Demo-Modus</b> starten (alles ohne Kamera).<br>
+            <i>Tipp: Für Desktop-Kameratests Chrome oder Edge nutzen; Firefox verträgt sich mit der AR-Kamerapipeline nicht immer.</i><br>
+        </div>
+        </div>
+        <div id="werk-liste" style="display:none">
+            <a class="ov-zurueck" style="cursor:pointer;max-width:200px;padding:8px 14px;font-size:13px;margin:0 auto 4px" onclick="menuBereich('start')">← Zurück</a>
+        </div>
+    </div></div>
+
+    <div id="start-overlay">
+        <img class="thb-logo" src="assets/thb_logo.svg" alt="Technische Hochschule Brandenburg">
+        <div class="cyanblock">
+            <div class="ov-badge">Das lebendige Bild · Brandenburg an der Havel</div>
+            <h1 id="ov-titel">AR-Erlebnis</h1>
+            <div id="ov-untertitel"></div>
+        </div>
+
+        <div id="system-check">
+            <div class="check-zeile" id="chk-verbindung"><span class="icon">⏳</span><span>Server wird geprüft …</span></div>
+            <div class="check-zeile" id="chk-marker"><span class="icon">⏳</span><span>Bild-Marker wird geprüft …</span></div>
+            <div class="check-zeile" id="chk-video"><span class="icon">⏳</span><span>Video wird geprüft …</span></div>
+            <div id="ladebalken-rahmen"><div id="ladebalken"></div></div>
+            <div class="check-zeile" id="chk-geraet"><span class="icon">⏳</span><span>Gerät wird geprüft …</span></div>
+        </div>
+
+        <div id="produktion-info">🎬 Das AR-Video zu diesem Werk ist gerade in Produktion.
+            Die Geschichte, alle Fakten und der Chat mit dem Werk sind aber schon da!</div>
+
+        <button class="btn btn-start" id="btn-start" onclick="startApp()" disabled>Wird vorbereitet …</button>
+        <!-- Lese-Knopf am 19.07.2026 entfernt: redundant, der Demo-Modus zeigt Fakten/Chat ueber den Info-Knopf (Funktion nurLesen bleibt im Code) -->
+        <button class="btn btn-cheat" onclick="forceTracking()">⚠️ Demo-Modus (ohne Marker)</button>
+        <a class="ov-zurueck" href="index_v2.html">← Zurück zur Werkübersicht</a>
+    </div>
+
+    <!-- Galerie-Modus: Monitor zeigt die Werke, Handys scannen den Bildschirm -->
+    <button id="galerie-links" class="galerie-pfeil" style="display:none" onclick="galerieZeigen(-1)">‹</button>
+    <button id="galerie-rechts" class="galerie-pfeil" style="display:none" onclick="galerieZeigen(1)">›</button>
+    <div id="galerie-hinweis" style="display:none">📱 Mit dem Handy scannen: gleiche Web-App → „Scannen mit der Kamera“</div>
+
+    <!-- Fakten: Button und Panel -->
+    <button id="fakten-btn" onclick="panelToggle(true)" aria-label="Fakten anzeigen">ℹ</button>
+    <div id="fakten-panel">
+        <div class="griff"></div>
+        <button id="panel-schliessen" onclick="panelToggle(false)" aria-label="Schließen">✕</button>
+        <h2 id="p-titel"></h2>
+        <div id="p-untertitel"></div>
+
+        <div class="tabbar">
+            <button class="tab aktiv" id="tab-btn-info" onclick="tabWechsel('info')">📖 Geschichte &amp; Fakten</button>
+            <button class="tab" id="tab-btn-chat" onclick="tabWechsel('chat')">💬 Frag mich!</button>
+        </div>
+
+        <div class="tabseite aktiv" id="tab-info">
+            <h3>Die Geschichte <button id="geschichte-vorlesen" class="mini-vorlesen" onclick="vorlesenGeschichte()">🔊 Vorlesen</button></h3>
+            <p id="p-geschichte"></p>
+            <h3>Fakten</h3>
+            <ul id="p-fakten"></ul>
+            <h3>Quellen</h3>
+            <ul id="quellen-liste"></ul>
+            <h3 id="wahr-titel">Wahr oder erzählt?</h3>
+            <p id="p-wahr"></p>
+            <div id="ki-hinweis">🤖 Transparenzhinweis: Video und Erzählstimme wurden mit generativer KI erstellt.
+                Alle historischen Fakten sind redaktionell geprüft und stammen aus den oben genannten Quellen
+                (Kennzeichnung gemäß Art. 50 EU-KI-Verordnung).</div>
+        </div>
+
+        <div class="tabseite" id="tab-chat">
+            <div id="chat-verlauf"></div>
+            <div id="chat-chips"></div>
+            <div id="chat-audio-zeile">
+                <button id="tts-stop" onclick="sprechStopp()" title="Sprachausgabe anhalten">⏹ Stopp</button>
+                <button id="tts-toggle" onclick="ttsUmschalten()">🔊 Vorlesen: an</button>
+                <button id="geraete-info" onclick="geraeteInfoKopieren()" title="Für das Beobachtungsprotokoll: Gerät, Browser, WebGL, Justier-Werte">📋 Geräte-Info</button>
+            </div>
+            <div id="chat-eingabe">
+                <input id="chat-feld" type="text" placeholder="Stell mir eine Frage …"
+                       autocomplete="off" onkeydown="if(event.key==='Enter')chatSenden()">
+                <button id="chat-senden" onclick="chatSenden()" aria-label="Senden">➤</button>
+            </div>
+            <div id="chat-hinweis">Die Antworten stammen aus einem vorbereiteten, redaktionell geprüften
+                Wissensspeicher zu diesem Werk. Bei Fragen außerhalb davon antwortet das Werk ehrlich,
+                dass es dazu nichts in den Archiven hat.</div>
+        </div>
+    </div>
+
+    <!-- Versteckter Justier-Modus: 5x schnell auf die Statusleiste tippen (PC: Taste K) -->
+    <div id="kalib-panel">
+        <h3>🔧 Justier-Modus (verstecktes Feature)</h3>
+        <div class="kalib-zeile"><label>Schrittweite</label>
+            <select id="kalib-step"><option value="0.5">0.5</option><option value="1" selected>1</option>
+            <option value="5">5</option><option value="15">15 (Rotation)</option></select></div>
+        <div class="kalib-zeile"><label>Position X</label>
+            <button onclick="kal('px',-1)">−</button><button onclick="kal('px',1)">+</button>
+            <label style="width:auto">Y</label><button onclick="kal('py',-1)">−</button><button onclick="kal('py',1)">+</button>
+            <label style="width:auto">Z</label><button onclick="kal('pz',-1)">−</button><button onclick="kal('pz',1)">+</button>
+            <span class="wert" id="w-pos"></span></div>
+        <div class="kalib-zeile"><label>Rotation X</label>
+            <button onclick="kal('rx',-1)">−</button><button onclick="kal('rx',1)">+</button>
+            <label style="width:auto">Y</label><button onclick="kal('ry',-1)">−</button><button onclick="kal('ry',1)">+</button>
+            <label style="width:auto">Z</label><button onclick="kal('rz',-1)">−</button><button onclick="kal('rz',1)">+</button>
+            <span class="wert" id="w-rot"></span></div>
+        <div class="kalib-zeile"><label>Größe</label>
+            <button onclick="kal('s',-1)">−</button><button onclick="kal('s',1)">+</button>
+            <span class="wert" id="w-scale"></span></div>
+        <div class="kalib-aktionen">
+            <button id="kalib-kopieren" onclick="kalKopieren()">Werte kopieren (für werke.js)</button>
+            <button id="kalib-reset" onclick="kalReset()">Reset</button>
+            <button id="kalib-geraet" onclick="kalGeraetSpeichern()">Für dieses Gerät speichern</button>
+            <button id="kalib-geraet-weg" onclick="kalGeraetLoeschen()">Geräte-Justierung löschen</button>
+            <button id="kalib-zu" onclick="kalibToggle(false)">Schließen</button>
+        </div>
+    </div>
+
+    <!-- Passt-Check: erscheint einmal pro Gerät nach dem ersten Tracking mit Video -->
+    <div id="passt-panel">
+        <div id="passt-frage">
+            <p>Liegt das Video genau auf dem Bild?</p>
+            <div class="passt-knoepfe">
+                <button class="btn" onclick="passtJa()">✅ Passt</button>
+                <button class="btn" onclick="passtAnpassen()">🔧 Anpassen</button>
+            </div>
+        </div>
+        <div id="passt-regler" style="display:none">
+            <div class="passt-zeile"><span>Größe</span><button onclick="pk('s',-1)">−</button><button onclick="pk('s',1)">＋</button></div>
+            <div class="passt-zeile"><span>Höhe</span><button onclick="pk('py',1)">▲</button><button onclick="pk('py',-1)">▼</button></div>
+            <div class="passt-zeile"><span>Seite</span><button onclick="pk('px',-1)">◀</button><button onclick="pk('px',1)">▶</button></div>
+            <button class="btn" id="passt-fertig" onclick="passtFertig()">✅ Fertig, für dieses Gerät merken</button>
+        </div>
+    </div>
+
+    <!-- Experiment-Rundgang: geführte Tour durch alle Werke (?modus=kamera&tour=1) -->
+    <div id="tour-karte">
+        <p id="tour-schritt"></p>
+        <h3 id="tour-titel"></h3>
+        <p id="tour-text"></p>
+        <p id="tour-status"></p>
+        <div class="tour-knoepfe">
+            <button class="btn" id="tour-weiter" onclick="tourWeiter()">Weiter →</button>
+        </div>
+        <div id="tour-punkte"></div>
+    </div>
+
+    <button id="geschichte-btn" onclick="geschichteAbspielen()">▶ Meine Geschichte hören</button>
+    <div id="freihand-layer"></div>
+    <button id="freihand-btn" onclick="freihandToggle()" title="Einmal erkannt, dann frei bewegen: Freihand zeigt das Werk auf seiner Buehne weiter"><span id="fh-live" class="an">📷 Live</span><span id="fh-frei">🖐️ Freihand</span></button>
+
+    <div id="toast"></div>
+
+    <a-scene
+        embedded
+        vr-mode-ui="enabled: false;"
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
+        arjs="sourceType: webcam; debugUIEnabled: false;">
+        <a-assets>
+            <video id="ki-video" preload="auto" loop crossorigin muted playsinline></video>
+            <!-- Hinweis: Die Erzaehlstimme ist in die Videos geschnitten.
+                 Die separate MP3 (werke.js, Feld audio) dient dem Vorlesen-Knopf. -->
+        </a-assets>
+        <!-- Der NFT-Marker wird per JavaScript aus werke.js eingefügt -->
+        <a-entity camera>
+            <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -2"
+                     width="1" height="1.49"></a-video>
+        </a-entity>
+    </a-scene>
+
+    <script>
+    // --- 1. URL AUSWERTEN ---
+    // ?werk=mona  -> Einzelwerk (QR-Code am Bild)
+    // ?modus=kamera -> Kamera-Modus: erkennt selbst, welches Werk vor der Linse ist
+    // ohne Parameter -> Startseite mit Kamera-Modus + Lexikon
+    const params = new URLSearchParams(location.search);
+    const werkId = params.get("werk");
+    const kameraModus = params.get("modus") === "kamera";
+    const galerieModus = params.get("modus") === "galerie";
+    const demoDirekt = params.get("demo") === "1";
+    const tourAktiv = params.get("tour") === "1";
+    // Kamerarechte frueh und explizit anfragen: manche Browser (v. a. Firefox) zeigen fuer
+    // die interne AR.js-Anfrage keinen Prompt und scheitern still. Wir fragen selbst,
+    // geben die Spur sofort wieder frei - AR.js uebernimmt danach mit erteiltem Recht.
+    const brauchtKamera = (kameraModus || (params.get("werk") && !demoDirekt)) && params.get("modus") !== "galerie";
+    // Fruehwarnung: ohne WebGL kann A-Frame nichts rendern (weisser Bildschirm).
+    if (brauchtKamera) {
+        try {
+            const c = document.createElement("canvas");
+            if (!c.getContext("webgl") && !c.getContext("experimental-webgl"))
+                setTimeout(() => toast("⚠️ Dieser Browser kann gerade kein WebGL (3D) - AR ist damit nicht moeglich. Firefox: Hardwarebeschleunigung aktivieren / Privacy-Addons pruefen. Oder Chrome/Edge nutzen.", 12000), 800);
+        } catch (e) { /* egal */ }
+    }
+
+    if (brauchtKamera && location.protocol !== "file:" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Nur anfragen, wenn die Rechte noch NICHT erteilt sind - sonst wuerde unsere
+        // Voranfrage mit der AR.js-eigenen Kameraoeffnung kollidieren (Windows erlaubt
+        // die Kamera oft nur einmal gleichzeitig -> weisser Bildschirm).
+        const voranfrage = () => navigator.mediaDevices.getUserMedia({ video: true })
+            .then(s => { s.getTracks().forEach(tr => tr.stop()); console.log("Kamera-Voranfrage: erlaubt - Seite laedt neu fuer sauberen AR-Start"); location.reload(); })
+            .catch(e => {
+                console.log("Kamera-Voranfrage:", e.name, e.message);
+                setTimeout(() => toast("Kamerazugriff fehlgeschlagen (" + e.name + "). Kamera-Symbol in der Adressleiste pruefen; in Firefox ggf. gespeicherte Blockierung entfernen (Haken 'Entscheidung merken' setzen). Notfalls Chrome/Edge nutzen.", 9000), 1500);
+            });
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: "camera" })
+                .then(st => { if (st.state === "prompt" || st.state === "denied") voranfrage(); else console.log("Kamerarecht bereits erteilt - AR.js uebernimmt direkt."); })
+                .catch(() => voranfrage());   // Firefox kennt "camera" in permissions.query teils nicht
+        } else voranfrage();
+    }
+    // Lokaler Doppelklick-Start (file://): das crossorigin-Attribut (fuer WebGL/AR noetig)
+    // blockiert dort Video/Audio komplett -> entfernen. Kamera geht unter file:// ohnehin
+    // nicht (kein sicherer Kontext); fuer echte lokale Tests LOKAL_STARTEN.bat nutzen (localhost).
+    if (location.protocol === "file:") {
+        document.querySelectorAll("video[crossorigin], audio[crossorigin]").forEach(el => el.removeAttribute("crossorigin"));
+        console.log("file://-Modus: crossorigin entfernt; Kamera nicht verfuegbar - Demo-Modus nutzen oder LOKAL_STARTEN.bat");
+    }
+
+    let werk = WERKE.find(w => w.id === werkId) || null;
+    let aktuellesWerk = null;   // im Kamera-Modus: das zuletzt erkannte Werk
+    let videoWerk = null;        // das Werk, dessen Videos gerade am ki-video haengen
+    let videoModus = "idle";     // "idle" (stummer Loop) oder "geschichte" (vertont)
+    let chatGestartet = false;  // frueh deklarieren! (fuellePanel nutzt es beim Laden)
+    let chatAudio = null;
+
+    const statusText  = document.getElementById("status-text");
+    const statusBar   = document.getElementById("status-bar");
+    const startOverlay= document.getElementById("start-overlay");
+    const btnStart    = document.getElementById("btn-start");
+    const video       = document.getElementById("ki-video");
+
+    // Nicht zu laut: gedrosselte Lautstaerke fuer Video, Erzaehlung und Chat
+    const LAUTSTAERKE = 0.6;
+    video.volume = LAUTSTAERKE;
+
+    // --- Idle-Loop und erzaehltes Geschichtsvideo ---
+    // Hat ein Werk ein videoIdle (stummer, nahtloser Loop), lebt das Bild
+    // erst mal nur still vor sich hin. Die vertonte Geschichte startet auf
+    // Knopfdruck und kehrt am Ende von selbst in den Loop zurueck.
+    const geschichteBtn = document.getElementById("geschichte-btn");
+
+    function idleZeigen(w) {
+        videoModus = "idle";
+        video.loop = true; video.muted = true;
+        if (video.getAttribute("src") !== w.videoIdle) video.src = w.videoIdle;
+        video.play().catch(() => {});
+        geschichteBtn.textContent = "▶ Meine Geschichte hören";
+    }
+
+    function geschichteZeigen(w) {
+        videoModus = "geschichte";
+        video.loop = false; video.muted = false;
+        if (video.getAttribute("src") !== w.video) {
+            video.src = w.video;          // frischer Start, beginnt automatisch bei 0
+        } else {
+            video.load();                 // Neustart ohne Seek: laeuft auch auf Servern ohne Range-Support
+        }
+        video.play().catch(() => {});
+        geschichteBtn.textContent = "⏹ Geschichte beenden";
+    }
+
+    window.geschichteAbspielen = function() {
+        if (!videoWerk) return;
+        if (videoModus === "geschichte") { idleZeigen(videoWerk); return; }
+        sprechStopp();                    // nichts spricht doppelt
+        geschichteZeigen(videoWerk);
+    };
+
+    video.addEventListener("ended", () => {
+        if (videoModus === "geschichte" && videoWerk && videoWerk.videoIdle)
+            idleZeigen(videoWerk);
+    });
+    const cheatVideo  = document.getElementById("cheat-video");
+    const faktenBtn   = document.getElementById("fakten-btn");
+
+    function status(text, farbe) {
+        statusText.textContent = text;
+        if (farbe) { statusBar.style.color = farbe; statusBar.style.borderColor = farbe; }
+    }
+    function check(id, zustand, text) {
+        const el = document.getElementById(id);
+        el.className = "check-zeile " + zustand;
+        el.innerHTML = "<span class='icon'>" + (zustand === "ok" ? "✅" : zustand === "warn" ? "⚠️" : "❌") +
+                       "</span><span>" + text + "</span>";
+    }
+    let toastTimer = null;
+    function toast(text, dauer) {
+        const t = document.getElementById("toast");
+        t.textContent = text; t.classList.add("zeig");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove("zeig"), dauer || 4000);
+    }
+
+    // --- 2. STARTSEITE (ohne Parameter): Kamera-Modus oder Lexikon ---
+    if (!werk && !kameraModus) {
+        document.getElementById("werk-menu").style.display = "block";
+        window.menuBereich = function(was) {
+            document.getElementById("menu-stufe1").style.display = (was === "start") ? "block" : "none";
+            document.getElementById("bereich-ar").style.display = (was === "ar") ? "block" : "none";
+            document.getElementById("werk-liste").style.display = (was === "lexikon") ? "block" : "none";
+        };
+        const liste = document.getElementById("werk-liste");
+        // (Kamera-Kachel entfernt 19.07.2026: der grosse "Scannen"-Knopf oben uebernimmt das)
+        const trenner = document.createElement("p");
+        trenner.style.cssText = "color:var(--text-leise);font-size:12px;margin:16px 0 4px;letter-spacing:1px;";
+        trenner.textContent = "WERK WÄHLEN: öffnet direkt die Demo-Ansicht";
+        liste.appendChild(trenner);
+        WERKE.forEach(w => {
+            const a = document.createElement("a");
+            a.className = "werk-card";
+            a.href = "?werk=" + encodeURIComponent(w.id) + "&demo=1";
+            a.innerHTML = "<span class='pfeil'>→</span><b>" + w.titel + "</b><span>" + (w.untertitel || "") + "</span>" +
+                          (w.inProduktion ? "<br><span class='badge-produktion'>🎬 Video in Produktion · Fakten &amp; Chat verfügbar</span>" : "");
+            liste.appendChild(a);
+        });
+    }
+
+    // --- 3. PANEL MIT EINEM WERK FUELLEN (auch beim Wechsel im Kamera-Modus) ---
+    function fuellePanel(w) {
+        aktuellesWerk = w;
+        document.getElementById("p-titel").textContent = w.titel;
+        document.getElementById("p-untertitel").textContent = w.untertitel || "";
+        document.getElementById("p-geschichte").textContent = w.geschichte || "";
+        const fk = document.getElementById("p-fakten"); fk.innerHTML = "";
+        (w.fakten || []).forEach(f => { const li = document.createElement("li"); li.textContent = f; fk.appendChild(li); });
+        const ql = document.getElementById("quellen-liste"); ql.innerHTML = "";
+        (w.quellen || []).forEach(q => { const li = document.createElement("li"); li.textContent = q; ql.appendChild(li); });
+        document.getElementById("ki-hinweis").style.display = w.kiHinweis ? "block" : "none";
+        // "Wahr oder erzaehlt?": deklariert, was belegt und was Dramatisierung ist
+        const wahrT = document.getElementById("wahr-titel");
+        const wahrP = document.getElementById("p-wahr");
+        wahrT.style.display = wahrP.style.display = w.wahrErzaehlt ? "block" : "none";
+        wahrP.textContent = w.wahrErzaehlt || "";
+        // Chat auf das neue Werk zuruecksetzen
+        chatGestartet = false;
+        document.getElementById("chat-verlauf").innerHTML = "";
+        document.getElementById("chat-chips").innerHTML = "";
+        document.getElementById("chat-eingabe").style.display = "flex";
+    }
+
+    // Kalibrier-Zustand (bezieht sich auf das aktuelle Werk)
+    let K = { px:0, py:0, pz:0, rx:0, ry:0, rz:0, s:1 };
+    let arVideoEl = null;
+
+    // GERÄTE-DELTA: gleicht Geräteunterschiede (Kameraoptik, Viewport) aus.
+    // Einmal pro Gerät im Justier-Modus einstellen und "Für dieses Gerät speichern" –
+    // das Delta wird im Browser gespeichert und auf ALLE Werke angewendet.
+    // Die Werte in werke.js bleiben die Referenz (eingemessen am iPhone 13 mini).
+    const r2 = v => Math.round(v * 100) / 100;
+    let geraeteDelta = { dx:0, dy:0, dz:0, ds:1 };
+    try {
+        const g = JSON.parse(localStorage.getItem("bra_geraeteDelta") || "null");
+        if (g && typeof g.ds === "number") geraeteDelta = g;
+    } catch(e) { /* Privatmodus o.ä.; dann eben ohne */ }
+
+    function kalBasis(w) {
+        const p = (w.kalibrierung.position || "0 0 0").split(" ").map(Number);
+        const r = (w.kalibrierung.rotation || "0 0 0").split(" ").map(Number);
+        const s = (w.kalibrierung.scale    || "1 1 1").split(" ").map(Number);
+        return { px:p[0], py:p[1], pz:p[2], rx:r[0], ry:r[1], rz:r[2], s:s[0] };
+    }
+
+    function kalLaden(w) {
+        const b = kalBasis(w);
+        K = { px:r2(b.px + geraeteDelta.dx), py:r2(b.py + geraeteDelta.dy), pz:r2(b.pz + geraeteDelta.dz),
+              rx:b.rx, ry:b.ry, rz:b.rz, s:r2(b.s * geraeteDelta.ds) };
+    }
+
+    // --- 4. SYSTEM-CHECKS (nur im Einzelwerk-Modus mit fertigem Video) ---
+    const MAX_MB = 6;
+    const LADE_TIMEOUT_S = 12;
+
+    function checksStarten() {
+        const istLokal = ["localhost", "127.0.0.1"].includes(location.hostname) || location.protocol === "file:";
+        if (location.protocol !== "https:" && !istLokal) {
+            check("chk-geraet", "fehler", "Kein HTTPS: der Browser blockiert die Kamera. Seite über https:// aufrufen.");
+        } else if (!window.WebGLRenderingContext) {
+            check("chk-geraet", "fehler", "WebGL wird nicht unterstützt; AR läuft auf diesem Gerät nicht.");
+        } else if (!navigator.onLine) {
+            check("chk-geraet", "warn", "Gerät ist offline; nur bereits geladene Inhalte funktionieren.");
+        } else {
+            check("chk-geraet", "ok", "Gerät geeignet (HTTPS, WebGL, online)");
+        }
+        fetch(werk.marker + ".fset", { method: "HEAD" }).then(r => {
+            if (r.ok) check("chk-marker", "ok", "Bild-Marker gefunden");
+            else check("chk-marker", "fehler", "Bild-Marker nicht gefunden (Fehler " + r.status + "), Pfad in werke.js prüfen");
+        }).catch(() => check("chk-marker", "fehler", "Marker nicht erreichbar, Verbindung prüfen"));
+        fetch(werk.video, { method: "HEAD" }).then(r => {
+            if (!r.ok) { check("chk-verbindung", "fehler", "Video nicht gefunden (Fehler " + r.status + ")"); return; }
+            check("chk-verbindung", "ok", "Server erreichbar");
+            const bytes = parseInt(r.headers.get("Content-Length") || "0", 10);
+            if (bytes > 0) {
+                const mb = (bytes / 1048576).toFixed(1);
+                if (bytes / 1048576 > MAX_MB)
+                    check("chk-video", "warn", "Video ist " + mb + " MB (Ziel: unter " + MAX_MB + " MB), lädt im Mobilnetz langsam.");
+                else check("chk-video", "ok", "Video ok (" + mb + " MB)");
+            } else check("chk-video", "ok", "Video gefunden (Größe unbekannt)");
+        }).catch(() => check("chk-verbindung", "fehler", "Keine Verbindung zum Server"));
+
+        const rahmen = document.getElementById("ladebalken-rahmen");
+        const balken = document.getElementById("ladebalken");
+        rahmen.style.display = "block";
+        let bereit = false;
+        const startZeit = Date.now();
+        video.addEventListener("progress", () => {
+            try {
+                if (video.buffered.length && video.duration)
+                    balken.style.width = Math.min(100, Math.round(video.buffered.end(video.buffered.length - 1) / video.duration * 100)) + "%";
+            } catch (e) {}
+        });
+        video.addEventListener("canplaythrough", () => {
+            bereit = true; balken.style.width = "100%";
+            btnStart.disabled = false; btnStart.textContent = "Erlebnis starten";
+        }, { once: true });
+        video.addEventListener("error", () => {
+            check("chk-video", "fehler", "Video konnte nicht geladen werden; Pfad in werke.js prüfen");
+            btnStart.textContent = "Video fehlt";
+        });
+        setTimeout(() => {
+            if (!bereit) {
+                btnStart.disabled = false; btnStart.textContent = "Erlebnis starten (lädt noch …)";
+                toast("Langsame Verbindung: Das Video lädt im Hintergrund weiter.", 6000);
+            }
+        }, LADE_TIMEOUT_S * 1000);
+        window.addEventListener("offline", () => toast("⚠️ Verbindung verloren; bereits Geladenes läuft weiter.", 6000));
+        window.addEventListener("online",  () => toast("✅ Wieder online.", 2500));
+        video.addEventListener("stalled", () => toast("Video stockt; die Verbindung ist gerade langsam …", 3500));
+        video.addEventListener("waiting", () => status("⏳ VIDEO PUFFERT …", "var(--warn)"));
+        video.addEventListener("playing", () => status("✅ ERKANNT", "var(--ok)"));
+    }
+
+    // --- 5a. EINZELWERK-MODUS (QR-Code fuehrt direkt zum Werk) ---
+    const szene = document.querySelector("a-scene");
+
+    function overlayBauen(nft, w, videoAsset) {
+        // fertiges Video? Sonst Standbild als Platzhalter (Demo-Betrieb).
+        let el = null;
+        if (!w.inProduktion && videoAsset) {
+            el = document.createElement("a-video");
+            el.setAttribute("src", "#" + videoAsset);
+        } else if (w.bild) {
+            el = document.createElement("a-image");
+            el.setAttribute("src", w.bild);
+        }
+        if (!el) return null;
+        el.setAttribute("width", "1");
+        el.setAttribute("height", "1.49");
+        const b = kalBasis(w);
+        el.setAttribute("position", `${r2(b.px + geraeteDelta.dx)} ${r2(b.py + geraeteDelta.dy)} ${r2(b.pz + geraeteDelta.dz)}`);
+        el.setAttribute("rotation", `${b.rx} ${b.ry} ${b.rz}`);
+        const es = r2(b.s * geraeteDelta.ds);
+        el.setAttribute("scale", `${es} ${es} ${es}`);
+        nft.appendChild(el);
+        return el;
+    }
+
+    function nftAnlegen(w, videoAsset) {
+        const nft = document.createElement("a-nft");
+        nft.setAttribute("type", "nft");
+        nft.setAttribute("url", w.marker);
+        nft.setAttribute("smooth", "true");
+        nft.setAttribute("smoothCount", "10");
+        nft.setAttribute("smoothTolerance", ".01");
+        nft.setAttribute("smoothThreshold", "5");
+        const overlay = overlayBauen(nft, w, videoAsset);
+        szene.appendChild(nft);
+
+        nft.addEventListener("markerFound", () => {
+            status("✅ " + w.titel + " erkannt", "var(--ok)");
+            statusBar.style.backgroundColor = "rgba(0,40,15,0.85)";
+            if (aktuellesWerk !== w) fuellePanel(w);
+            arVideoEl = overlay;
+            kalLaden(w);
+            tourMarkerGefunden(w);
+            freihandBtn.style.display = "block";
+            if (!w.inProduktion && videoAsset) {
+                videoWerk = w;
+                if (w.videoIdle) { idleZeigen(w); geschichteBtn.style.display = "block"; }
+                else { video.muted = false; video.play(); }
+                passtCheckStarten();
+            }
+            else toast("🖼 " + w.titel + ": Standbild-Modus: Geschichte, Fakten und Chat über den ℹ-Knopf (Browserstimme, bis die Tonspuren da sind).", 3500);
+        });
+        nft.addEventListener("markerLost", () => {
+            if (freihandModus) return; // Freihand: Wiedergabe laeuft ohne Tracking weiter
+            status(kameraModus ? "📷 Suche Werke …" : "🔍 Suche " + w.titel + " …", "var(--fehler)");
+            statusBar.style.backgroundColor = "rgba(8,12,16,0.82)";
+            video.pause();
+            geschichteBtn.style.display = "none";
+        });
+        return nft;
+    }
+
+    if (werk && !kameraModus) {
+        document.title = werk.titel + " · Das lebendige Bild";
+        document.getElementById("ov-titel").textContent = werk.titel;
+        document.getElementById("ov-untertitel").textContent = werk.untertitel || "";
+        fuellePanel(werk);
+        kalLaden(werk);
+
+        if (werk.inProduktion) {
+            document.getElementById("produktion-info").style.display = "block";
+            document.getElementById("system-check").style.display = "none";
+            if (!werk.bild) {
+                document.getElementById("btn-start").style.display = "none";
+                document.querySelector(".btn-cheat").style.display = "none";
+            } else {
+                btnStart.disabled = false; btnStart.textContent = "Vorschau starten (Standbild)";
+            }
+            status("🎬 IN PRODUKTION", "var(--warn)");
+            if (demoDirekt && werk.bild) setTimeout(() => forceTracking(), 250);
+        } else {
+            videoWerk = werk;
+            video.src = werk.videoIdle || werk.video;
+            checksStarten();
+            status("🔍 BEREIT", "var(--warn)");
+            if (demoDirekt) setTimeout(() => forceTracking(), 250);   // Lexikon: direkt in die Demo-Ansicht
+        }
+        const bauen = () => nftAnlegen(werk, werk.inProduktion ? null : "ki-video");
+        if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen);
+    }
+
+    // --- 5b. KAMERA-MODUS: alle Werke gleichzeitig scannen ---
+    // Achtung: Jeder NFT-Marker kostet Rechenleistung. Auf schwachen Handys
+    // notfalls einzelne Werke in werke.js mit  imKameraModus: false  ausnehmen.
+    if (kameraModus) {
+        document.title = "Kamera-Modus · Das lebendige Bild";
+        document.getElementById("ov-titel").textContent = "Kamera-Modus";
+        document.getElementById("ov-untertitel").textContent = tourAktiv
+            ? "Experiment-Rundgang: Du wirst Schritt für Schritt durch alle Werke geführt."
+            : "Richte die Kamera auf eines der Werke. Die App erkennt selbst, welches Bild vor dir hängt.";
+        if (tourAktiv) document.getElementById("ov-titel").textContent = "Experiment-Rundgang";
+        document.getElementById("system-check").style.display = "none";
+        document.querySelector(".btn-cheat").style.display = "none";
+        btnStart.disabled = false; btnStart.textContent = "Kamera starten";
+        status("📷 KAMERA-MODUS", "var(--akzent)");
+
+        const teilnehmer = WERKE.filter(w => w.imKameraModus !== false && w.marker);
+        // ALLE fertigen Werke haengen am selben ki-video; beim Erkennen wechselt die Quelle
+        // (idleZeigen setzt video.src pro Werk). Speicher: es laeuft immer nur EIN Video.
+        const mitVideo = teilnehmer.find(w => !w.inProduktion);
+        if (mitVideo) { videoWerk = mitVideo; video.src = mitVideo.videoIdle || mitVideo.video; }
+        // Nur Werke anlegen, deren Marker-Dateien wirklich existieren - alles andere
+        // wird gar nicht erst geladen (kein Rechenaufwand, keine Konsolen-Fehler).
+        // Sobald neue Marker in assets/markers/ liegen, ist das Werk automatisch dabei.
+        const bauen = () => teilnehmer.forEach(w => {
+            fetch(w.marker + ".fset", { method: "HEAD" })
+                .then(r => {
+                    if (r.ok) nftAnlegen(w, w.inProduktion ? null : "ki-video");
+                    else console.log("Kamera-Modus: Marker fehlt fuer " + w.id + " - Werk vorerst nicht geladen.");
+                })
+                .catch(() => console.log("Kamera-Modus: Marker nicht erreichbar fuer " + w.id + "."));
+        });
+        if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen);
+        if (teilnehmer.length > 3)
+            console.log("Hinweis: " + teilnehmer.length + " Marker aktiv - auf aelteren Geraeten ggf. reduzieren.");
+    }
+
+    // --- 6. START / LESEMODUS / NOTFALL-DEMO ---
+    window.startApp = function() {
+        document.getElementById("home-btn").style.display = "flex";
+        startOverlay.style.display = "none";
+        faktenBtn.style.display = "flex";
+        video.muted = true;
+        video.play().then(() => { video.pause(); video.currentTime = 0; })
+                    .catch(() => console.log("Audio-Init ok"));
+        status(kameraModus ? "📷 Suche Werke …" : "📷 SCANNE BILD …", "var(--warn)");
+        if (tourAktiv && kameraModus) tourZeigen();
+        setTimeout(() => {
+            const arVideo = document.querySelector("video[id^='arjs']") || document.querySelector("#arjs-video");
+            if (!arVideo || arVideo.readyState === 0)
+                toast("Keine Kamera gefunden. Kamera-Symbol in der Adressleiste auf Zulassen stellen, andere Kamera-Apps/Tabs schließen und unter Windows: Einstellungen > Datenschutz > Kamera freigeben. Danach neu laden.", 9000);
+        }, 6000);
+    };
+
+    window.nurLesen = function() {
+        document.getElementById("home-btn").style.display = "flex";
+        startOverlay.style.display = "none";
+        faktenBtn.style.display = "flex";
+        status("📖 LESEMODUS", "var(--akzent)");
+        if (!aktuellesWerk && WERKE.length) fuellePanel(werk || WERKE[0]);
+        panelToggle(true);
+    };
+
+    // FREIHAND-MODUS: einmal scannen, danach mit gesenktem Arm weiter.
+    // Entstanden aus dem Pretest-Befund "Arm tut weh beim Draufhalten" (Kap. 4.3.2).
+    let freihandModus = false;
+    const freihandBtn = document.getElementById("freihand-btn");
+    const freihandLayer = document.getElementById("freihand-layer");
+    // Passgenaue Lage des Videos auf der Outpainting-Buehne:
+    // Konvention aller Freihand-Hintergruende: 1080x2340 px, Originaldigitalisat exakt mittig bei 85 % Breite.
+    // Die App rechnet die cover-Skalierung des Hintergrunds nach und legt das Video pixelgenau auf diese Flaeche,
+    // egal welches Seitenverhaeltnis Werk oder Bildschirm haben. Weicht ein Hintergrund von der Konvention ab,
+    // kann das Werk in werke.js ein Feld freihandLage: { cx, cy, breite } (relativ 0..1 zur 1080x2340-Leinwand) tragen.
+    const BUEHNE_B = 1080, BUEHNE_H = 2340;
+    function buehnenSkala() {
+        // Hochformat-Bildschirme (Handys): Hintergrund als cover.
+        // Breitbild (Desktop, Querformat): Hintergrund auf Hoehe einpassen,
+        // die Seitenflaechen fuellt ein Farbverlauf aus den Kantenfarben des Hintergrunds.
+        const breitbild = window.innerWidth / window.innerHeight > 0.8;
+        const s = breitbild ? window.innerHeight / BUEHNE_H
+                            : Math.max(window.innerWidth / BUEHNE_B, window.innerHeight / BUEHNE_H);
+        return { s, breitbild,
+                 offX: (window.innerWidth - BUEHNE_B * s) / 2,
+                 offY: (window.innerHeight - BUEHNE_H * s) / 2 };
+    }
+    const kantenSpeicher = {};
+    function kantenFarben(url, cb) {
+        // Durchschnittsfarbe der linken und rechten Bildkante (fuer den Farbverlauf daneben)
+        if (kantenSpeicher[url]) { cb(kantenSpeicher[url]); return; }
+        const im = new Image();
+        im.crossOrigin = "anonymous";
+        im.onload = () => {
+            try {
+                const c = document.createElement("canvas");
+                c.width = im.width; c.height = im.height;
+                const ctx = c.getContext("2d");
+                ctx.drawImage(im, 0, 0);
+                function spalte(x) {
+                    const d = ctx.getImageData(x, 0, 1, c.height).data;
+                    let r = 0, g = 0, b = 0, n = d.length / 4;
+                    for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
+                    return "rgb(" + Math.round(r/n) + "," + Math.round(g/n) + "," + Math.round(b/n) + ")";
+                }
+                kantenSpeicher[url] = { links: spalte(1), rechts: spalte(c.width - 2) };
+                cb(kantenSpeicher[url]);
+            } catch (e) { /* Canvas gesperrt (CORS): dunkler Grund bleibt */ }
+        };
+        im.src = url;
+    }
+    function buehneMalen() {
+        // Buehne in zwei Bildebenen: (1) Ambient = weichgezeichnete Vollflaechen-Kopie
+        // (fuellt Breitbild-Raender mit den Farben des Bildes, ohne Canvas -> funktioniert
+        // auch lokal per file://), (2) das scharfe 1080x2340-Buehnenbild exakt eingepasst.
+        const w = aktuellesWerk || videoWerk;
+        const url = freihandLayer.dataset.bg || "";
+        const quelle = url || (w && w.bild) || "";
+        let amb = freihandLayer.querySelector(".buehne-ambiente");
+        if (!amb) {
+            amb = document.createElement("img");
+            amb.className = "buehne-ambiente";
+            freihandLayer.insertBefore(amb, freihandLayer.firstChild);
+        }
+        if (quelle && amb.getAttribute("src") !== quelle) amb.src = quelle;
+        let bg = freihandLayer.querySelector(".buehne-bild");
+        if (!bg) {
+            bg = document.createElement("img");
+            bg.className = "buehne-bild";
+            freihandLayer.insertBefore(bg, amb.nextSibling);
+        }
+        if (url) {
+            if (bg.getAttribute("src") !== url) bg.src = url;
+            const k = buehnenSkala();
+            bg.style.display = "";
+            bg.style.width  = (BUEHNE_B * k.s) + "px";
+            bg.style.height = (BUEHNE_H * k.s) + "px";
+            bg.style.left = k.offX + "px";
+            bg.style.top  = k.offY + "px";
+        } else {
+            bg.style.display = "none";   // (noch) kein erweiterter Hintergrund: nur Ambient + Medium
+        }
+        freihandLayer.style.backgroundImage = "none";
+    }
+    function buehnenMedium() {
+        // Video, wenn fuer dieses Werk eines geladen ist; sonst das zentrierte Standbild
+        const w = aktuellesWerk || videoWerk;
+        const videoAktiv = w && videoWerk && videoWerk.id === w.id && (video.getAttribute("src") || video.querySelector("source"));
+        let img = freihandLayer.querySelector(".freihand-standbild");
+        if (videoAktiv) { if (img) img.style.display = "none"; video.style.display = ""; return video; }
+        if (!img) {
+            img = document.createElement("img");
+            img.className = "freihand-standbild";
+            freihandLayer.appendChild(img);
+        }
+        if (w && w.bild) img.src = w.bild;
+        img.style.display = "";
+        video.style.display = "none";
+        return img;
+    }
+    function freihandLayout() {
+        const w = aktuellesWerk || videoWerk;
+        if (!freihandModus || !w) return;
+        buehneMalen();
+        const medium = buehnenMedium();
+        if (!w.freihandBild) return;   // ohne Buehnen-Hintergrund: CSS-Zentrierung (max 86vw/68vh) reicht
+        const lage = w.freihandLage || { cx: 0.5, cy: 0.5, breite: 0.85 };
+        const k = buehnenSkala();
+        medium.style.maxWidth = "none";
+        medium.style.maxHeight = "none";
+        const vb = BUEHNE_B * lage.breite * k.s;         // Zielbreite = Breite der Originalflaeche
+        medium.style.width  = vb + "px";
+        if (lage.seite) {
+            // Zielhoehe = Seitenverhaeltnis des ORIGINALS. Liefert Seedance ein anderes Format,
+            // schneidet object-fit: cover das Video unsichtbar auf die Originalflaeche zu.
+            medium.style.height = (vb * lage.seite) + "px";
+        } else {
+            medium.style.height = "auto";
+        }
+        medium.style.objectFit = "cover";   // nie verzerren, egal ob Video oder Standbild
+        medium.style.left = (k.offX + lage.cx * BUEHNE_B * k.s) + "px";
+        medium.style.top  = (k.offY + lage.cy * BUEHNE_H * k.s) + "px";
+        medium.classList.add("weich-medium");   // Kanten weich in die Buehne ueberblenden
+    }
+    function freihandLayoutReset() {
+        const img = freihandLayer.querySelector(".freihand-standbild");
+        ["width", "height", "maxWidth", "maxHeight", "left", "top", "objectFit", "display"].forEach(k => {
+            video.style[k] = "";
+            if (img) img.style[k] = "";
+        });
+        video.classList.remove("weich-medium");
+        if (img) img.classList.remove("weich-medium");
+    }
+    window.addEventListener("resize", freihandLayout);
+    window.addEventListener("orientationchange", freihandLayout);
+    let videoElternteil = null; // urspruenglicher DOM-Platz des ki-video (a-assets)
+    window.freihandToggle = function() {
+        freihandModus = !freihandModus;
+        if (freihandModus) {
+            const w = aktuellesWerk || videoWerk;
+            // Werkspezifischer Hintergrund; fehlt die Datei, bleibt der dunkle Grundton.
+            // Hintergrund setzen; falls die Datei mit dieser Endung fehlt, die jeweils andere probieren (png <-> jpg)
+            if (w && w.freihandBild) {
+                const fb = w.freihandBild;
+                freihandLayer.dataset.bg = fb;
+                const probe = new Image();
+                probe.onload = () => { buehneMalen(); freihandLayout(); };
+                probe.onerror = () => {
+                    // andere Endung probieren; fehlt auch die, gibt es (noch) keinen erweiterten
+                    // Hintergrund -> Farbverlauf aus den Kantenfarben des Werkbilds + zentriertes Bild
+                    const alt2 = fb.endsWith(".png") ? fb.replace(/\.png$/, ".jpg") : fb.replace(/\.jpg$/, ".png");
+                    const probe2 = new Image();
+                    probe2.onload = () => {
+                        freihandLayer.dataset.bg = alt2;
+                        buehneMalen(); freihandLayout();
+                    };
+                    probe2.onerror = () => {
+                        freihandLayer.dataset.bg = "";
+                        buehneMalen(); freihandLayout();
+                    };
+                    probe2.src = alt2;
+                };
+                probe.src = fb;
+            } else {
+                freihandLayer.dataset.bg = "";   // kein erweiterter Hintergrund: Ambient aus dem Werkbild
+            }
+            buehneMalen();
+            if (!videoElternteil) videoElternteil = video.parentNode;
+            freihandLayer.appendChild(video);   // Video als HTML-Element in den Layer (Wiedergabe laeuft weiter)
+            freihandLayer.style.display = "block";
+            freihandLayoutReset(); freihandLayout();
+            document.getElementById("fh-frei").classList.add("an");
+            document.getElementById("fh-live").classList.remove("an");
+            const name = (aktuellesWerk || videoWerk) ? (aktuellesWerk || videoWerk).titel : "Werk";
+            status("🖐️ FREIHAND: " + name, "var(--akzent)");
+            if (!galerieModus) toast("Freihand-Modus: Du kannst das Handy jetzt bequem halten oder herumlaufen; Video, Geschichte und Chat laufen weiter.", 4500);
+            if (videoWerk && videoWerk.videoIdle && videoModus === "idle") geschichteBtn.style.display = "block";
+        } else {
+            freihandLayer.style.display = "none";
+            if (videoElternteil) videoElternteil.appendChild(video); // zurueck in a-assets
+            freihandLayoutReset();
+            document.getElementById("fh-frei").classList.remove("an");
+            document.getElementById("fh-live").classList.add("an");
+            status(kameraModus ? "📷 Suche Werke …" : "🔍 Suche Bild …", "var(--warn)");
+        }
+    };
+
+    window.forceTracking = function() {
+        document.getElementById("home-btn").style.display = "flex";
+        startOverlay.style.display = "none";
+        faktenBtn.style.display = "flex";
+        status("⚠️ DEMO-MODUS", "var(--warn)");
+        cheatVideo.setAttribute("visible", "true");
+        if (videoWerk && videoWerk.videoIdle) { idleZeigen(videoWerk); geschichteBtn.style.display = "block"; }
+        else { video.muted = false; video.play(); }
+        // Ohne Kamera braucht niemand das leere Kamerabild: Buehne (erweiterter
+        // Hintergrund) anzeigen; Idle-Video falls geladen, sonst das zentrierte Werkbild.
+        if (!freihandModus) freihandToggle();
+        freihandBtn.style.display = "none";   // ohne Kamera gibt es kein "Zurueck zum Live-Bild"
+    };
+
+    // --- GALERIE-MODUS: Monitor zeigt die Werke auf ihrer Buehne, Handys scannen den Bildschirm ---
+    let galerieIndex = 0;
+    const galerieWerke = WERKE.filter(w => w.bild);
+    window.galerieZeigen = function(schritt) {
+        galerieIndex = (galerieIndex + schritt + galerieWerke.length) % galerieWerke.length;
+        const w = galerieWerke[galerieIndex];
+        aktuellesWerk = w;
+        if (freihandModus) { freihandModus = false; freihandLayer.style.display = "none"; }
+        freihandToggle();                       // baut die Buehne fuer aktuellesWerk (Bild, kein Video)
+        freihandBtn.style.display = "none";     // in der Galerie gibt es kein "Zurueck zum Live-Bild"
+        status("🖼 " + w.titel + "  ·  " + (galerieIndex+1) + "/" + galerieWerke.length, "var(--akzent)");
+    };
+    if (galerieModus) {
+        document.title = "Galerie-Modus · Das lebendige Bild";
+        document.getElementById("werk-menu").style.display = "none";
+        startOverlay.style.display = "none";
+        document.getElementById("home-btn").style.display = "flex";
+        document.getElementById("galerie-links").style.display = "block";
+        document.getElementById("galerie-rechts").style.display = "block";
+        document.getElementById("galerie-hinweis").style.display = "block";
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight") galerieZeigen(1);
+            if (e.key === "ArrowLeft") galerieZeigen(-1);
+        });
+        galerieZeigen(0);
+    }
+
+    window.addEventListener("click", () => {
+        if (statusText.textContent.includes("erkannt") || statusText.textContent.includes("DEMO")) {
+            if (video.paused && video.src) { video.play(); }
+        }
+    });
+
+    // --- 7. FAKTEN-PANEL + TABS ---
+    window.panelToggle = function(offen) {
+        if (!offen) sprechStopp();
+        document.getElementById("fakten-panel").classList.toggle("offen", offen);
+    };
+    window.tabWechsel = function(name) {
+        document.getElementById("tab-info").classList.toggle("aktiv", name === "info");
+        document.getElementById("tab-chat").classList.toggle("aktiv", name === "chat");
+        document.getElementById("tab-btn-info").classList.toggle("aktiv", name === "info");
+        document.getElementById("tab-btn-chat").classList.toggle("aktiv", name === "chat");
+        if (name === "chat") chatInit();
+    };
+
+    // --- 8. CHAT MIT DEM KUNSTWERK ---
+    // Antworten kommen NICHT von einer Live-KI, sondern aus dem geprueften
+    // Frage-Pool in werke.js (Pre-Cache-Prinzip). Kein Server, kein Halluzinieren.
+    // Optional: haengt an einer Antwort ein  audio: "pfad.mp3" , wird sie vorgelesen.
+    const ARCHIV_SATZ = "Dazu ist mir aus den Archiven nichts bekannt. Aber frag mich gern etwas anderes!";
+
+    // Vorlesen: generisches Text-to-Speech ueber den Browser (kostenlos, offline).
+    // Liegt zu einer Antwort eine ElevenLabs-MP3 vor, hat die Vorrang.
+    // Wichtig: Es sprechen nie zwei Stimmen gleichzeitig. Jede neue Frage,
+    // der Stopp-Knopf und das Schliessen des Panels beenden die alte Ausgabe.
+    let ttsAn = true;
+
+    window.sprechStopp = function() {
+        if (window.speechSynthesis) speechSynthesis.cancel();
+        if (chatAudio) { chatAudio.pause(); chatAudio = null; }
+    };
+
+    function vorlesen(text, erzwingen) {
+        if ((!ttsAn && !erzwingen) || !window.speechSynthesis) return;
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "de-DE";
+        u.volume = LAUTSTAERKE;
+        const deutsch = speechSynthesis.getVoices().find(v => v.lang && v.lang.indexOf("de") === 0);
+        if (deutsch) u.voice = deutsch;
+        speechSynthesis.speak(u);
+    }
+
+    // Vorlesen-Knopf an der Geschichte: ElevenLabs-Erzaehlspur, falls die
+    // MP3 schon da ist, sonst Browser-Stimme. Zweiter Druck stoppt.
+    window.vorlesenGeschichte = function() {
+        const w = aktuellesWerk;
+        if (!w || !w.geschichte) return;
+        const spielt = (chatAudio && !chatAudio.paused)
+                    || (window.speechSynthesis && speechSynthesis.speaking);
+        sprechStopp();
+        if (spielt) return;
+        if (w.audio) {
+            chatAudio = new Audio(w.audio);
+            chatAudio.volume = LAUTSTAERKE;
+            chatAudio.play().catch(() => vorlesen(w.geschichte, true));
+        } else {
+            vorlesen(w.geschichte, true);
+        }
+    };
+
+    // Geister-Echo: Die Chat-Stimme bekommt einen leichten Hall, als
+    // spraeche das Werk aus seinem Rahmen heraus. Die MP3s werden dafuer
+    // TROCKEN (ohne Hall) produziert, das Echo entsteht live per Web Audio.
+    let echoCtx = null;
+    const GEISTER_ECHO_AN = false;   // 19.07.2026: standardmaessig AUS (klang in Bastis Test unangenehm);
+                                     // bei Bedarf auf true stellen, Effekt bleibt vollstaendig erhalten.
+    function geisterEcho(el) {
+        if (!GEISTER_ECHO_AN) return;
+        try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            echoCtx = echoCtx || new AC();
+            if (echoCtx.state === "suspended") echoCtx.resume();
+            const quelle = echoCtx.createMediaElementSource(el);
+            const delay  = echoCtx.createDelay(1.0); delay.delayTime.value = 0.22;
+            const rueck  = echoCtx.createGain(); rueck.gain.value = 0.3;
+            const nass   = echoCtx.createGain(); nass.gain.value = 0.4;
+            quelle.connect(echoCtx.destination);
+            quelle.connect(delay); delay.connect(rueck); rueck.connect(delay);
+            delay.connect(nass); nass.connect(echoCtx.destination);
+        } catch (e) { /* kein Web Audio? Dann klingt die MP3 einfach normal. */ }
+    }
+
+    // Fuers Experiment-Protokoll: alle technischen Eckdaten mit einem Klick
+    window.geraeteInfoKopieren = function() {
+        let webgl = "nein";
+        try { const c = document.createElement("canvas"); if (c.getContext("webgl") || c.getContext("experimental-webgl")) webgl = "ja"; } catch (e) {}
+        const info = [
+            "GERAETE-INFO (" + new Date().toLocaleString("de-DE") + ")",
+            "Werk: " + (aktuellesWerk ? aktuellesWerk.id : (videoWerk ? videoWerk.id : "-")),
+            "Modus: " + (kameraModus ? "Kamera" : (galerieModus ? "Galerie" : (demoDirekt ? "Demo" : "Einzelwerk"))),
+            "Browser/Geraet (User-Agent): " + navigator.userAgent,
+            "Bildschirm: " + screen.width + "x" + screen.height + " @ " + window.devicePixelRatio + "x",
+            "WebGL: " + webgl,
+            "Justier-Delta (Geraeteprofil): " + JSON.stringify(geraeteDelta)
+        ].join("\n");
+        (navigator.clipboard ? navigator.clipboard.writeText(info) : Promise.reject())
+            .then(() => toast("📋 Geräte-Info kopiert, einfach ins Beobachtungsprotokoll einfügen.", 3500))
+            .catch(() => { console.log(info); toast("Kopieren blockiert; die Geräte-Info steht in der Konsole (F12).", 4500); });
+        console.log(info);
+    };
+
+    window.ttsUmschalten = function() {
+        ttsAn = !ttsAn;
+        if (!ttsAn) sprechStopp();
+        document.getElementById("tts-toggle").textContent = ttsAn ? "🔊 Vorlesen: an" : "🔇 Vorlesen: aus";
+    };
+
+    function blase(text, wer) {
+        const verlauf = document.getElementById("chat-verlauf");
+        const b = document.createElement("div");
+        b.className = "blase " + wer;
+        b.textContent = text;
+        verlauf.appendChild(b);
+        b.scrollIntoView({ behavior: "smooth", block: "end" });
+        return b;
+    }
+
+    function chatInit() {
+        if (chatGestartet || !aktuellesWerk) return;
+        chatGestartet = true;
+        const pool = aktuellesWerk.dialog || [];
+        if (!pool.length) {
+            blase("Zu diesem Werk ist noch kein Frage-Pool hinterlegt (werke.js, Feld 'dialog').", "werk");
+            document.getElementById("chat-eingabe").style.display = "none";
+            return;
+        }
+        blase("Hallo! Ich bin " + aktuellesWerk.titel + ". Frag mich etwas, oder tipp auf eine der Fragen unten.", "werk");
+        const chips = document.getElementById("chat-chips");
+        pool.forEach(d => {
+            const c = document.createElement("button");
+            c.className = "chip";
+            c.textContent = d.frage;
+            c.onclick = () => { chatFrage(d.frage); };
+            chips.appendChild(c);
+        });
+    }
+
+    function normalisieren(t) {
+        return t.toLowerCase()
+                .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+                .replace(/[^a-z0-9 ]/g, " ");
+    }
+
+    function antwortFinden(frage) {
+        const f = normalisieren(frage);
+        let beste = null, besteTreffer = 0;
+        (aktuellesWerk.dialog || []).forEach(d => {
+            let treffer = 0;
+            (d.stichworte || []).forEach(st => { if (f.includes(normalisieren(st))) treffer += 2; });
+            normalisieren(d.frage).split(" ").forEach(w => { if (w.length > 3 && f.includes(w)) treffer += 1; });
+            if (treffer > besteTreffer) { besteTreffer = treffer; beste = d; }
+        });
+        return besteTreffer >= 2 ? beste : null;
+    }
+
+    function chatFrage(text) {
+        sprechStopp();   // nichts darf sich ueberlappen
+        blase(text, "ich");
+        const tippt = blase("", "werk");
+        tippt.classList.add("tippt");
+        const eintrag = antwortFinden(text);
+        const antwort = eintrag ? eintrag.antwort : ARCHIV_SATZ;
+        // kurze Denkpause, damit es nicht nach Automat aussieht
+        setTimeout(() => {
+            tippt.classList.remove("tippt");
+            tippt.textContent = antwort;
+            // Antwort vorlesen: ElevenLabs-MP3 falls vorhanden, sonst Browser-Stimme
+            sprechStopp();
+            // waehrend des Gespraechs lebt das Bild still weiter (Idle-Loop)
+            if (videoModus === "geschichte" && videoWerk && videoWerk.videoIdle) idleZeigen(videoWerk);
+            if (eintrag && eintrag.audio) {
+                chatAudio = new Audio(eintrag.audio);
+                chatAudio.volume = LAUTSTAERKE;
+                geisterEcho(chatAudio);
+                // MP3 noch nicht produziert? Dann liest die Browser-Stimme vor.
+                if (ttsAn) chatAudio.play().catch(() => vorlesen(antwort));
+                const knopf = document.createElement("span");
+                knopf.textContent = " 🔊";
+                knopf.style.cursor = "pointer";
+                knopf.onclick = (e) => {
+                    e.stopPropagation();
+                    sprechStopp();
+                    chatAudio = new Audio(eintrag.audio);
+                    chatAudio.volume = LAUTSTAERKE;
+                    geisterEcho(chatAudio);
+                    chatAudio.play().catch(() => vorlesen(antwort));
+                };
+                tippt.appendChild(knopf);
+            } else {
+                vorlesen(antwort);
+            }
+        }, 700 + Math.random() * 600);
+    }
+
+    window.chatSenden = function() {
+        const feld = document.getElementById("chat-feld");
+        const text = feld.value.trim();
+        if (!text) return;
+        feld.value = "";
+        chatFrage(text);
+    };
+
+    // --- 9. JUSTIER-MODUS (versteckt, 5x auf die Statusleiste tippen, PC: Taste K) ---
+    let taps = [];
+    statusBar.addEventListener("click", () => {
+        const jetzt = Date.now();
+        taps = taps.filter(t => jetzt - t < 2500); taps.push(jetzt);
+        if (taps.length >= 5) { taps = []; kalibToggle(true); }
+    });
+    window.addEventListener("keydown", e => { if (e.key === "k") kalibToggle(true); });
+
+    window.kalibToggle = function(an) {
+        document.getElementById("kalib-panel").style.display = an ? "block" : "none";
+        if (an) { kalAnzeigen(); toast("Justier-Modus aktiv: Werte am Ende kopieren und in werke.js eintragen.", 4500); }
+    };
+    function kalAnwenden() {
+        if (!arVideoEl) return;
+        arVideoEl.setAttribute("position", `${K.px} ${K.py} ${K.pz}`);
+        arVideoEl.setAttribute("rotation", `${K.rx} ${K.ry} ${K.rz}`);
+        arVideoEl.setAttribute("scale",    `${K.s} ${K.s} ${K.s}`);
+    }
+    function kalAnzeigen() {
+        document.getElementById("w-pos").textContent   = `${K.px} ${K.py} ${K.pz}`;
+        document.getElementById("w-rot").textContent   = `${K.rx} ${K.ry} ${K.rz}`;
+        document.getElementById("w-scale").textContent = `${K.s}`;
+    }
+    window.kal = function(achse, richtung) {
+        const schritt = parseFloat(document.getElementById("kalib-step").value) * richtung;
+        K[achse] = Math.round((K[achse] + schritt) * 100) / 100;
+        kalAnwenden(); kalAnzeigen();
+    };
+    window.kalReset = function() {
+        if (aktuellesWerk) kalLaden(aktuellesWerk);
+        kalAnwenden(); kalAnzeigen();
+    };
+    // ============ EXPERIMENT-RUNDGANG ============
+    // Aufruf: ?modus=kamera&tour=1 fuehrt standardisiert durch alle Werke.
+    // Reihenfolge und Aufgaben sind fest, damit jede Testperson dasselbe erlebt (Kap. 6).
+    // (tourAktiv wird oben bei den URL-Parametern deklariert - stand frueher hier und warf im Kamera-Modus einen TDZ-ReferenceError)
+    const TOUR = [
+        { id:"loriot",     aufgabe:"Richte die Kamera auf das Waldmops-Bild und schau die Geschichte bis zum Ende. Tippe danach auf 💬 und stelle Loriot eine eigene Frage; zum Beispiel: Warum Möpse?" },
+        { id:"mona",       aufgabe:"Finde die Mona Lisa und schau ihr Video bis zur Pointe. Öffne danach über den Info-Knopf den Abschnitt „Wahr oder erzählt?“ und lies ihn kurz." },
+        { id:"roland",     aufgabe:"Richte die Kamera auf den Roland. Beweg das Handy dabei langsam hin und her: bleibt das Video stabil auf dem Bild sitzen?" },
+        { id:"fontane",    aufgabe:"Öffne bei der Weinhandlung die Geschichte im Info-Panel und lass sie dir über den Vorlesen-Knopf vorlesen." },
+        { id:"wackelauto", aufgabe:"Tippe oben rechts auf 🖐️ Freihand und schau dir das Wackelauto mit bequem gesenktem Arm an. Danach kannst du frei erkunden." },
+        { id:"knitter",    aufgabe:"Schau bei den Knitter-Frauen zu und achte darauf: Wirkt das Gespräch der beiden natürlich?" },
+        { id:"bielefeld",  aufgabe:"Zum Abschluss: Hör dir das Live-Interview mit Marie Bielefeld an; Reporter und Antwort kommen aus zwei Stimmen." },
+    ];
+    let tourIndex = -1;
+    let tourGefunden = false;
+
+    function tourWerk() { return tourIndex >= 0 && tourIndex < TOUR.length ? WERKE.find(w => w.id === TOUR[tourIndex].id) : null; }
+
+    function tourZeigen() {
+        const karte = document.getElementById("tour-karte");
+        if (!tourAktiv) { karte.style.display = "none"; return; }
+        karte.style.display = "block";
+        const punkte = document.getElementById("tour-punkte");
+        punkte.innerHTML = TOUR.map((_,i) =>
+            `<i class="${i < tourIndex ? "fertig" : i === tourIndex ? "aktiv" : ""}"></i>`).join("");
+        if (tourIndex < 0) {
+            document.getElementById("tour-schritt").textContent = "Experiment-Rundgang";
+            document.getElementById("tour-titel").textContent = "Willkommen!";
+            document.getElementById("tour-text").textContent =
+                "Du gehst jetzt der Reihe nach durch " + TOUR.length + " historische Werke. Bei jedem steht hier eine kleine Aufgabe. " +
+                "Es gibt kein Richtig oder Falsch; uns interessiert, wie DU das Erlebnis findest. Sag gern laut, was dir auffällt.";
+            document.getElementById("tour-status").textContent = "";
+            document.getElementById("tour-weiter").textContent = "Los geht's →";
+        } else if (tourIndex >= TOUR.length) {
+            document.getElementById("tour-schritt").textContent = "Geschafft!";
+            document.getElementById("tour-titel").textContent = "Vielen Dank! 🎉";
+            document.getElementById("tour-text").textContent =
+                "Das war der Rundgang. Bitte gib das Gerät zurück, es folgt noch ein kurzer Fragebogen.";
+            document.getElementById("tour-status").textContent = "";
+            document.getElementById("tour-weiter").textContent = "Rundgang beenden";
+        } else {
+            const w = tourWerk(); const t = TOUR[tourIndex];
+            document.getElementById("tour-schritt").textContent = "Werk " + (tourIndex+1) + " von " + TOUR.length;
+            document.getElementById("tour-titel").textContent = w ? w.titel : t.id;
+            document.getElementById("tour-text").textContent = t.aufgabe;
+            document.getElementById("tour-status").textContent = tourGefunden ? "✅ Werk erkannt" : "🔍 Noch nicht erkannt; Kamera aufs Bild richten";
+            document.getElementById("tour-weiter").textContent = "Weiter →";
+        }
+    }
+
+    window.tourWeiter = function() {
+        if (tourIndex >= TOUR.length) { document.getElementById("tour-karte").style.display = "none"; return; }
+        tourIndex++; tourGefunden = false; tourZeigen();
+    };
+
+    function tourMarkerGefunden(w) {
+        if (!tourAktiv) return;
+        const ziel = tourWerk();
+        if (ziel && w.id === ziel.id && !tourGefunden) { tourGefunden = true; tourZeigen(); }
+    }
+
+    // PASST-CHECK: fragt einmal pro Gerät nach dem ersten stabilen Tracking nach.
+    let passtGefragt = false;
+    function passtCheckStarten() {
+        if (passtGefragt) return;
+        try { if (localStorage.getItem("bra_kalibOk") === "1") return; } catch(e) {}
+        passtGefragt = true;
+        setTimeout(() => { document.getElementById("passt-panel").style.display = "block"; }, 1500);
+    }
+    window.passtJa = function() {
+        document.getElementById("passt-panel").style.display = "none";
+        try { localStorage.setItem("bra_kalibOk", "1"); } catch(e) {}
+    };
+    window.passtAnpassen = function() {
+        document.getElementById("passt-frage").style.display = "none";
+        document.getElementById("passt-regler").style.display = "block";
+    };
+    window.pk = function(achse, richtung) {
+        if (achse === "s") K.s = r2(K.s * (richtung > 0 ? 1.05 : 0.95));
+        else K[achse] = r2(K[achse] + 2 * richtung);
+        kalAnwenden();
+    };
+    window.passtFertig = function() {
+        document.getElementById("passt-panel").style.display = "none";
+        document.getElementById("passt-regler").style.display = "none";
+        document.getElementById("passt-frage").style.display = "block";
+        kalGeraetSpeichern();
+        try { localStorage.setItem("bra_kalibOk", "1"); } catch(e) {}
+    };
+
+    window.kalGeraetSpeichern = function() {
+        if (!aktuellesWerk) { toast("Erst ein Werk öffnen und justieren.", 3000); return; }
+        const b = kalBasis(aktuellesWerk);
+        geraeteDelta = { dx:r2(K.px - b.px), dy:r2(K.py - b.py), dz:r2(K.pz - b.pz), ds: b.s ? r2(K.s / b.s) : 1 };
+        try {
+            localStorage.setItem("bra_geraeteDelta", JSON.stringify(geraeteDelta));
+            toast("✅ Geräte-Justierung gespeichert, gilt ab jetzt für alle Werke auf diesem Gerät.", 4500);
+        } catch(e) { toast("Speichern nicht möglich (Privatmodus?). Justierung gilt nur für diese Sitzung.", 4500); }
+    };
+    window.kalGeraetLoeschen = function() {
+        geraeteDelta = { dx:0, dy:0, dz:0, ds:1 };
+        try { localStorage.removeItem("bra_geraeteDelta"); } catch(e) {}
+        if (aktuellesWerk) { kalLaden(aktuellesWerk); kalAnwenden(); kalAnzeigen(); }
+        toast("Geräte-Justierung gelöscht, iPhone-Referenzwerte aktiv.", 3500);
+    };
+    window.kalKopieren = function() {
+        const schnipsel =
+`kalibrierung: {
+  position: "${K.px} ${K.py} ${K.pz}",
+  rotation: "${K.rx} ${K.ry} ${K.rz}",
+  scale:    "${K.s} ${K.s} ${K.s}"
+},`;
+        const fertig = () => { document.getElementById("kalib-kopieren").textContent = "✅ Kopiert!";
+            setTimeout(() => document.getElementById("kalib-kopieren").textContent = "Werte kopieren (für werke.js)", 1500); };
+        if (navigator.clipboard) navigator.clipboard.writeText(schnipsel).then(fertig, () => prompt("Werte für werke.js:", schnipsel));
+        else prompt("Werte für werke.js:", schnipsel);
+    };
+
+    </script>
+</body>
+</html>

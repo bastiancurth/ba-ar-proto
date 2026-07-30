@@ -1,0 +1,9 @@
+FEHLENDE DATEI: bielefeld_antwort_4.mp3
+Chat-Antwort 4 des Werks W7 (Ausgraeberin) - Stimme: Miriam Warm and Neutral (Marie), danach CapCut-Filter "Taschenradio" wie im Video.
+
+FRAGE (Reporter): Was wurde eigentlich aus Ihrer Sammlung?
+
+SPRECHTEXT (exakt so einsprechen; Audio-Tags in ENGLISCH ergaenzen, z. B. [confident] [dry] [pause]):
+1943 gingen 195 Urnen nach Köthen, die Zeiten waren schwer. 1965 kam die Sammlung zurück nach Brandenburg. Heute liegt sie im Stadtmuseum, samt unserer Kartei, die man erst kürzlich wiederfand.
+
+Ablage: assets/audio/antworten/bielefeld_antwort_4.mp3 (Abgabe-Kopie UND GitHub-Repo).

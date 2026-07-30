@@ -1,0 +1,9 @@
+FEHLENDE DATEI: bielefeld_antwort_5.mp3
+Chat-Antwort 5 des Werks W7 (Ausgraeberin) - Stimme: Miriam Warm and Neutral (Marie), danach CapCut-Filter "Taschenradio" wie im Video.
+
+FRAGE (Reporter): Und was war nun mit dem Maulwurf?
+
+SPRECHTEXT (exakt so einsprechen; Audio-Tags in ENGLISCH ergaenzen, z. B. [confident] [dry] [pause]):
+Ach, der. Kam mir heute früh mitten in die Grabung. Gräbt schneller als ich, das gebe ich zu. Aber er dokumentiert nichts, und damit ist er raus aus der Wissenschaft. Kleiner Scherz übrigens, den Maulwurf habe ich erfunden. Fast alles andere nicht.
+
+Ablage: assets/audio/antworten/bielefeld_antwort_5.mp3 (Abgabe-Kopie UND GitHub-Repo).

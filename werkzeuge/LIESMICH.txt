@@ -1,0 +1,49 @@
+============================================================
+WERKZEUGE fuer die Medien-Produktion (Windows UND Mac)
+============================================================
+Windows: die .bat-Dateien doppelklicken
+Mac:     die .command-Dateien doppelklicken
+         (beim ersten Mal: Rechtsklick > Oeffnen)
+
+EINRICHTEN  (einmalig zuerst ausfuehren!)
+  Installiert automatisch alles Noetige: ffmpeg (Videos),
+  Node.js und die Pakete des Marker-Creators. Windows nutzt
+  winget, Mac nutzt Homebrew. Danach Fenster neu oeffnen.
+
+SYNC_MEDIEN
+  Nach jedem Befuellen des Abgabe-Ordners ausfuehren. Kopiert
+  alles Fehlende zwischen 04_Medien und den App-assets hin und
+  her, komprimiert Videos dabei automatisch fuers Web, loescht
+  erledigte Platzhalter und aktualisiert MEDIEN_STATUS.html.
+
+VIDEO_KOMPRIMIEREN
+  Videos einzeln aufs Icon ziehen (Windows) oder Doppelklick
+  fuer alle in 03_Videos_final. Web-optimiert: H.264, max.
+  1280 px, 30 fps, faststart, Ton normalisiert auf angenehme
+  Lautstaerke. Ergebnis: <name>_web.mp4, Original bleibt.
+
+SEITENVERHAELTNIS_CHECK
+  Prueft pro Werk, ob Ausgangsbild (= Marker) und Video das-
+  selbe Seitenverhaeltnis haben, sonst saesse das Video schief
+  auf dem gedruckten Bild. Auf Wunsch werden abweichende
+  Videos mittig beschnitten -> <werk>_angepasst.mp4 zum Pruefen.
+
+MARKER_ERSTELLEN
+  Erzeugt die drei Tracking-Dateien lokal aus dem Ausgangsbild:
+    MARKER_ERSTELLEN loriot
+  Prueft vorher die Marker-Qualitaet (Confidence 0-5, ab 4 ist
+  es sehr gut; Regeln: detailreiches, kontrastreiches Bild in
+  hoher Aufloesung). Legt die Marker in App UND Abgabe-Ordner.
+  WICHTIG: genau das Bild verwenden, das gedruckt wird
+  (Louvre-Lektion der Masterarbeit).
+
+Der Ordner NFT-Marker-Creator/ gehoert dazu (Open Source, MIT,
+github.com/Carnaux/NFT-Marker-Creator) - beim Weitergeben an
+Museen einfach den ganzen werkzeuge-Ordner mitgeben.
+
+BAUSTEIN_PRUEFEN
+  Generierten werke.js-Baustein aus AnythingLLM in baustein.txt
+  einfuegen, Doppelklick: repariert typografische Anfuehrungs-
+  zeichen, prueft id, Pfade, Fakten-Anzahl, Dialoge und die
+  Syntax. Ergebnis: baustein_sauber.txt. Die inhaltliche
+  Pruefung der Fakten gegen die Quellen bleibt Handarbeit.

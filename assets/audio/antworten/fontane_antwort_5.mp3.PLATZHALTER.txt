@@ -1,0 +1,12 @@
+PLATZHALTER fuer: fontane_antwort_5.mp3
+Werk:  Plauer Straße um 1920
+Frage: Woher kam der Wein?
+------------------------------------------------------------
+SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
+wie die Erzaehlung des Werks - Persona: Weinhaendler F. W. Wiesike):
+
+Aus meinem Gewölbekeller, ganz hinten, wo die guten Flaschen liegen. Seit 1787 ist die Handlung in Familienhand, die Weine kamen aus der halben Welt zu uns an die Havel – und der beste Rheinwein ging Flasche um Flasche hinaus nach Plaue. Manche Geschichten beginnen eben mit einer Flasche.
+------------------------------------------------------------
+Fertige MP3 unter genau diesem Namen hier ablegen, dann den
+Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
+Antwort automatisch mit der Browser-Stimme vor.

@@ -1,0 +1,9 @@
+FEHLENDE DATEI: bielefeld_antwort_1.mp3
+Chat-Antwort 1 des Werks W7 (Ausgraeberin) - Stimme: Miriam Warm and Neutral (Marie), danach CapCut-Filter "Taschenradio" wie im Video.
+
+FRAGE (Reporter): Frau Bielefeld, was tun Sie da eigentlich?
+
+SPRECHTEXT (exakt so einsprechen; Audio-Tags in ENGLISCH ergaenzen, z. B. [confident] [dry] [pause]):
+Buddeln, sagt der Volksmund. Ich rette Urnen, sechzehnhundert Jahre alt, bevor die Sandgrube sie frisst. Die Herren vom Historischen Verein schnauben dazu. Sollen sie.
+
+Ablage: assets/audio/antworten/bielefeld_antwort_1.mp3 (Abgabe-Kopie UND GitHub-Repo).
