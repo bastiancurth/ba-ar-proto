@@ -513,7 +513,7 @@
         embedded
         vr-mode-ui="enabled: false;"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
-        arjs="sourceType: webcam; sourceWidth: 1280; sourceHeight: 720; debugUIEnabled: false;">
+        arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
             <video id="ki-video" preload="auto" loop crossorigin muted playsinline></video>
             <!-- Hinweis: Die Erzaehlstimme ist in die Videos geschnitten.
@@ -915,6 +915,18 @@
         if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen);
         if (teilnehmer.length > 3)
             console.log("Hinweis: " + teilnehmer.length + " Marker aktiv - auf aelteren Geraeten ggf. reduzieren.");
+        // Sichtbare Bereitschafts-Anzeige: jeder NFT-Worker meldet "arjs-nft-loaded",
+        // wenn sein Marker fertig geparst ist. Erst dann kann erkannt werden;
+        // auf Handys dauert das bei 7 Markern gern 10 bis 30 Sekunden.
+        let markerBereit = 0;
+        window.addEventListener("arjs-nft-loaded", () => {
+            markerBereit++;
+            if (markerBereit < teilnehmer.length) {
+                toast("Marker werden geladen: " + markerBereit + " von " + teilnehmer.length + " bereit …", 3000);
+            } else {
+                toast("✅ Alle " + markerBereit + " Marker bereit - jetzt aufs Werk halten!", 5000);
+            }
+        });
     }
 
     // --- 6. START / LESEMODUS / NOTFALL-DEMO ---
