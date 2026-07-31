@@ -706,6 +706,10 @@
     // Kalibrier-Zustand (bezieht sich auf das aktuelle Werk)
     let K = { px:0, py:0, pz:0, rx:0, ry:0, rz:0, s:1 };
     let arVideoEl = null;
+    // Sobald das Video wirklich Bilder liefert, Overlay wieder einblenden
+    document.getElementById("ki-video").addEventListener("playing", () => {
+        if (arVideoEl && arVideoEl.tagName === "A-VIDEO") arVideoEl.setAttribute("visible", "true");
+    });
 
     // GERÄTE-DELTA: gleicht Geräteunterschiede (Kameraoptik, Viewport) aus.
     // Einmal pro Gerät im Justier-Modus einstellen und "Für dieses Gerät speichern" –
@@ -718,11 +722,36 @@
         if (g && typeof g.ds === "number") geraeteDelta = g;
     } catch(e) { /* Privatmodus o.ä.; dann eben ohne */ }
 
+    // MARKER-MASSE: Pixelbreite, Pixelhoehe, dpi der NFT-Marker (aus den .iset-Dateien
+    // ausgelesen). ARToolkit rechnet die Pose in Millimetern (Pixel/dpi*25.4) mit
+    // Ursprung in der Marker-Ecke. Ein Overlay mit exakt Markerbreite x Markerhoehe,
+    // um die Haelfte verschoben und flach gelegt, liegt damit RECHNERISCH deckungs-
+    // gleich auf dem Bild; die alten Handwerte in werke.js sind nur noch Fallback.
+    // Test-Schalter: ?anker=mitte probiert die Ursprung-in-der-Mitte-Konvention.
+    const MARKER_MASSE = {
+        mona:       [500, 745, 300],
+        loriot:     [425, 319,  72],
+        knitter:    [700, 526,  72],
+        roland:     [344, 700,  72],
+        fontane:    [700, 526,  72],
+        wackelauto: [700, 408,  72],
+        bielefeld:  [446, 700,  72],
+    };
+    const ankerMitte = params.get("anker") === "mitte";
     function kalBasis(w) {
+        const m = MARKER_MASSE[w.id];
+        if (m) {
+            const f = 25.4 / m[2];                       // Pixel -> Millimeter
+            const b = r2(m[0] * f), h = r2(m[1] * f);
+            return { px: ankerMitte ? 0 : r2(b / 2), py: 0,
+                     pz: ankerMitte ? 0 : r2(-h / 2),
+                     rx: -90, ry: 0, rz: 0, s: 1, b: b, h: h };
+        }
+        // Fallback fuer Werke ohne Massetabelle: alte Handwerte aus werke.js
         const p = (w.kalibrierung.position || "0 0 0").split(" ").map(Number);
         const r = (w.kalibrierung.rotation || "0 0 0").split(" ").map(Number);
         const s = (w.kalibrierung.scale    || "1 1 1").split(" ").map(Number);
-        return { px:p[0], py:p[1], pz:p[2], rx:r[0], ry:r[1], rz:r[2], s:s[0] };
+        return { px:p[0], py:p[1], pz:p[2], rx:r[0], ry:r[1], rz:r[2], s:s[0], b:1, h:1.49 };
     }
 
     function kalLaden(w) {
@@ -808,9 +837,9 @@
             el.setAttribute("src", w.bild);
         }
         if (!el) return null;
-        el.setAttribute("width", "1");
-        el.setAttribute("height", "1.49");
         const b = kalBasis(w);
+        el.setAttribute("width", String(b.b));
+        el.setAttribute("height", String(b.h));
         el.setAttribute("position", `${r2(b.px + geraeteDelta.dx)} ${r2(b.py + geraeteDelta.dy)} ${r2(b.pz + geraeteDelta.dz)}`);
         el.setAttribute("rotation", `${b.rx} ${b.ry} ${b.rz}`);
         const es = r2(b.s * geraeteDelta.ds);
@@ -838,6 +867,10 @@
             statusBar.style.backgroundColor = "rgba(0,40,15,0.85)";
             if (aktuellesWerk !== w) fuellePanel(w);
             arVideoEl = overlay;
+            // Schwarzer-Kasten-Fix: nach einem Quellenwechsel rendert die Video-
+            // Textur schwarz, bis das Video Bilddaten hat. Solange ausblenden.
+            if (overlay && overlay.tagName === "A-VIDEO")
+                overlay.setAttribute("visible", video.readyState >= 2 ? "true" : "false");
             kalLaden(w);
             tourMarkerGefunden(w);
             freihandBtn.style.display = "block";
