@@ -338,6 +338,28 @@
         <p style="font-size:14.5px"><b>Das lebendige Bild</b> erweckt historische Bildmedien aus Brandenburg an der Havel zum Leben:
         Richte die Kamera auf eines der sieben Werke, und das Bild erwacht direkt im Kamerabild und erzählt seine Geschichte
         als kurzer, vertonter Film. Danach kannst du dir mehr vorlesen lassen, Fakten nachschlagen und dem Werk im Chat Fragen stellen.</p>
+        <!-- So funktioniert's in 4 Schritten: bewusst mit grossen Symbolen, damit es jede Altersgruppe sofort versteht -->
+        <div id="so-gehts" style="display:flex;justify-content:center;align-items:flex-start;gap:2px;margin:2px 0 14px;flex-wrap:wrap">
+            <div style="width:76px;text-align:center">
+                <div style="width:52px;height:52px;margin:0 auto 4px;border-radius:50%;background:#eef6f9;border:2px solid #cfe3ec;display:flex;align-items:center;justify-content:center;font-size:26px">📷</div>
+                <div style="font-size:11.5px;color:#3b4a56;line-height:1.25">Kamera aufs<br>Bild richten</div>
+            </div>
+            <div style="align-self:center;color:#9fb4c0;font-size:18px;padding-bottom:18px">→</div>
+            <div style="width:76px;text-align:center">
+                <div style="width:52px;height:52px;margin:0 auto 4px;border-radius:50%;background:#eef6f9;border:2px solid #cfe3ec;display:flex;align-items:center;justify-content:center;font-size:26px">✨</div>
+                <div style="font-size:11.5px;color:#3b4a56;line-height:1.25">Bild wird<br>erkannt</div>
+            </div>
+            <div style="align-self:center;color:#9fb4c0;font-size:18px;padding-bottom:18px">→</div>
+            <div style="width:76px;text-align:center">
+                <div style="width:52px;height:52px;margin:0 auto 4px;border-radius:50%;background:#eef6f9;border:2px solid #cfe3ec;display:flex;align-items:center;justify-content:center;font-size:26px">🎬</div>
+                <div style="font-size:11.5px;color:#3b4a56;line-height:1.25">Es erwacht<br>und erzählt</div>
+            </div>
+            <div style="align-self:center;color:#9fb4c0;font-size:18px;padding-bottom:18px">→</div>
+            <div style="width:76px;text-align:center">
+                <div style="width:52px;height:52px;margin:0 auto 4px;border-radius:50%;background:#eef6f9;border:2px solid #cfe3ec;display:flex;align-items:center;justify-content:center;font-size:26px">💬</div>
+                <div style="font-size:11.5px;color:#3b4a56;line-height:1.25">Fragen &amp; mehr<br>erfahren</div>
+            </div>
+        </div>
         <details id="intro-details" style="text-align:left;font-size:13px;margin:0 0 12px;color:#3b4a56">
             <summary style="cursor:pointer;font-weight:700;color:#0090b3">Wie funktioniert das?</summary>
             Die Werke selbst sind die Marker: Die App vergleicht das Kamerabild mit den hinterlegten Originalen und erkennt
@@ -712,7 +734,7 @@
     });
 
     // GERÄTE-DELTA: gleicht Geräteunterschiede (Kameraoptik, Viewport) aus.
-    // Einmal pro Gerät im Justier-Modus einstellen und "Für dieses Gerät speichern" –
+    // Einmal pro Gerät im Justier-Modus einstellen und "Für dieses Gerät speichern";
     // das Delta wird im Browser gespeichert und auf ALLE Werke angewendet.
     // Die Werte in werke.js bleiben die Referenz (eingemessen am iPhone 13 mini).
     const r2 = v => Math.round(v * 100) / 100;
@@ -1378,13 +1400,64 @@
         return besteTreffer >= 2 ? beste : null;
     }
 
+    // SMALLTALK: Dinge, die Leute nun mal in jeden Chat tippen (hi, danke, wer
+    // bist du, bist du eine KI ...). Greift nur, wenn keine echte Werk-Antwort
+    // passt, damit keine Sachfrage gekapert wird.
+    // Jede Figur begruesst in ihrer eigenen Stimme; Rest bleibt allgemein.
+    const PERSONA = {
+        loriot:     { gruss: "Wuff. Verzeihung: Guten Tag. Man ist hier schließlich wer. Frag ruhig, aber erschreck mir den Schmetterling nicht.",
+                      befinden: "Bronzen, danke der Nachfrage. Bei dem Wetter setzt man Patina an." },
+        mona:       { gruss: "Ah, Besuch! Ich bin Blicke gewohnt, aber ein Hallo ist auch mal schön. Frag mich etwas.",
+                      befinden: "Man lächelt seit fünfhundert Jahren; da fragt selten jemand, wie es MIR geht. Danke: gut." },
+        knitter:    { gruss: "Nanu, wir bekommen Gesellschaft! Setz dich dazu, wir erzählen gern.",
+                      befinden: "Uns geht es gut, wir sitzen ja. Und Gesprächsstoff gibt es hier reichlich." },
+        roland:     { gruss: "Seid gegrüßt. Ich stehe hier nicht zum Vergnügen, aber für Fragen habe ich Zeit.",
+                      befinden: "Man steht. Seit Jahrhunderten. Die Knie? Aus Stein, zum Glück." },
+        fontane:    { gruss: "Willkommen in der Plauer Straße! Treten Sie näher, der Wein wartet nicht.",
+                      befinden: "Bestens, solange die Flaschen ganz bleiben. Fragen Sie ruhig." },
+        wackelauto: { gruss: "Brrrm! Hallo! Steig gedanklich auf, ich erzähl dir was von unterwegs.",
+                      befinden: "Ein bisschen wackelig, aber das ist bei mir Programm." },
+        bielefeld:  { gruss: "Tag auch! Ich buddel hier gerade, aber reden geht immer. Frag los.",
+                      befinden: "Gut! Frische Luft, gute Funde. Besser geht es kaum." },
+    };
+    function persona(schluessel, sonst) {
+        const p = aktuellesWerk && PERSONA[aktuellesWerk.id];
+        return (p && p[schluessel]) || sonst;
+    }
+    const SMALLTALK = [
+        { m: /\b(hi|hallo|hey|moin|servus|guten (tag|morgen|abend)|huhu)\b/,
+          a: () => persona("gruss", "Hallo! Schön, dass du mich ansprichst. Frag mich ruhig etwas über meine Geschichte; ein paar Ideen findest du als Knöpfe unter dem Eingabefeld.") },
+        { m: /wie geht('?s| es dir)|alles (gut|klar|fit)\b/,
+          a: () => persona("befinden", "Für mein Alter erstaunlich gut! Ich hänge hier, schaue zu und erzähle gern. Und du?") },
+        { m: /\bdanke|dankeschoen|vielen dank\b/,
+          a: () => "Sehr gern! Dafür hänge ich hier." },
+        { m: /tschuess|ciao|bye|auf wiedersehen|bis (bald|dann|spaeter)|mach('?s)? gut/,
+          a: () => "Bis bald! Schau gern wieder vorbei; ich laufe nicht weg." },
+        { m: /wer bist du|was bist du|stell dich (mal )?vor/,
+          a: () => "Ich bin " + (aktuellesWerk ? aktuellesWerk.titel : "ein Werk aus Brandenburg an der Havel") + ". Was ich erlebt habe, erzähle ich dir gern; frag einfach los." },
+        { m: /bist du (echt|real|eine? (ki|ai)|ein (roboter|bot|computer))|kuenstliche intelligenz/,
+          a: () => "Gute Frage! Meine Antworten haben Menschen geschrieben und gegen die Archive geprüft; nur meine Filme wurden mit KI erzeugt. Was belegt und was erzählt ist, steht im Bereich „Wahr oder erzählt?“ im Info-Panel." },
+        { m: /erzaehl (mir )?(einen |nen )?witz|sag was lustiges/,
+          a: () => "Mein bester Witz steckt in meinem kurzen Film; schau ihn dir ruhig noch einmal an. Für Kalauer bin ich ehrlich gesagt zu alt." },
+        { m: /\b(haha+|lol|xd)\b|😂|🤣/,
+          a: () => "Freut mich! Humor hält jung; das sage ich mit einiger Autorität." },
+        { m: /was kannst du|hilfe\b|wie funktioniert (das|der chat)/,
+          a: () => "Du kannst mich alles über meine Geschichte fragen; die Knöpfe unter dem Eingabefeld sind gute Startpunkte. Im Info-Panel findest du außerdem Fakten, Quellen und den Vorlesen-Knopf." },
+    ];
+    function smalltalkAntwort(text) {
+        const f = normalisieren(text);
+        if (f.length > 60) return null; // lange Eingaben sind echte Fragen
+        for (const s of SMALLTALK) { if (s.m.test(f)) return s.a(); }
+        return null;
+    }
+
     function chatFrage(text) {
         sprechStopp();   // nichts darf sich ueberlappen
         blase(text, "ich");
         const tippt = blase("", "werk");
         tippt.classList.add("tippt");
         const eintrag = antwortFinden(text);
-        const antwort = eintrag ? eintrag.antwort : ARCHIV_SATZ;
+        const antwort = eintrag ? eintrag.antwort : (smalltalkAntwort(text) || ARCHIV_SATZ);
         // kurze Denkpause, damit es nicht nach Automat aussieht
         setTimeout(() => {
             tippt.classList.remove("tippt");
@@ -1411,9 +1484,12 @@
                     chatAudio.play().catch(() => vorlesen(antwort));
                 };
                 tippt.appendChild(knopf);
-            } else {
+            } else if (eintrag) {
+                // Werk-Antwort ohne fertige MP3: Browser-Stimme als Uebergang
                 vorlesen(antwort);
             }
+            // Smalltalk und Archiv-Hinweis bleiben bewusst stumm:
+            // vertont werden nur die werkspezifischen Antworten.
         }, 700 + Math.random() * 600);
     }
 
@@ -1463,13 +1539,13 @@
     // Reihenfolge und Aufgaben sind fest, damit jede Testperson dasselbe erlebt (Kap. 6).
     // (tourAktiv wird oben bei den URL-Parametern deklariert - stand frueher hier und warf im Kamera-Modus einen TDZ-ReferenceError)
     const TOUR = [
-        { id:"loriot",     aufgabe:"Richte die Kamera auf das Waldmops-Bild und schau die Geschichte bis zum Ende. Tippe danach auf 💬 und stelle Loriot eine eigene Frage; zum Beispiel: Warum Möpse?" },
-        { id:"mona",       aufgabe:"Finde die Mona Lisa und schau ihr Video bis zur Pointe. Öffne danach über den Info-Knopf den Abschnitt „Wahr oder erzählt?“ und lies ihn kurz." },
-        { id:"roland",     aufgabe:"Richte die Kamera auf den Roland. Beweg das Handy dabei langsam hin und her: bleibt das Video stabil auf dem Bild sitzen?" },
-        { id:"fontane",    aufgabe:"Öffne bei der Weinhandlung die Geschichte im Info-Panel und lass sie dir über den Vorlesen-Knopf vorlesen." },
-        { id:"wackelauto", aufgabe:"Tippe oben rechts auf 🖐️ Freihand und schau dir das Wackelauto mit bequem gesenktem Arm an. Danach kannst du frei erkunden." },
-        { id:"knitter",    aufgabe:"Schau bei den Knitter-Frauen zu und achte darauf: Wirkt das Gespräch der beiden natürlich?" },
-        { id:"bielefeld",  aufgabe:"Zum Abschluss: Hör dir das Live-Interview mit Marie Bielefeld an; Reporter und Antwort kommen aus zwei Stimmen." },
+        { id:"loriot",     aufgabe:"Richte die Kamera auf das Waldmops-Bild und schau den kurzen Film. Tippe danach auf 💬 und probiere eine der Vorschlagsfragen." },
+        { id:"mona",       aufgabe:"Finde die Mona Lisa und schau ihren Kurzfilm bis zur Pointe." },
+        { id:"roland",     aufgabe:"Richte die Kamera auf den Roland und beweg das Handy langsam hin und her: bleibt das Video auf dem Bild sitzen?" },
+        { id:"fontane",    aufgabe:"Öffne bei der Weinhandlung das Info-Panel und starte kurz den Vorlesen-Knopf; du kannst jederzeit stoppen." },
+        { id:"wackelauto", aufgabe:"Tippe oben rechts auf 🖐️ Freihand und schau das Wackelauto mit bequem gesenktem Arm an." },
+        { id:"knitter",    aufgabe:"Schau den beiden Knitter-Damen kurz zu: Wirkt ihr Gespräch natürlich?" },
+        { id:"bielefeld",  aufgabe:"Zum Abschluss: Hör kurz ins Live-Interview mit Marie Bielefeld rein; Reporter und Marie sind zwei Stimmen." },
     ];
     let tourIndex = -1;
     let tourGefunden = false;
