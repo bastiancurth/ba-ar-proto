@@ -541,6 +541,11 @@
             <!-- Hinweis: Die Erzaehlstimme ist in die Videos geschnitten.
                  Die separate MP3 (werke.js, Feld audio) dient dem Vorlesen-Knopf. -->
         </a-assets>
+        <!-- Umweg fuer Android: manche Geraete (Feldtest Motorola, S21) liefern beim
+             direkten Video-zu-WebGL-Upload teilweise schwarze Frames. Das Video wird
+             deshalb erst in dieses Canvas kopiert und das Canvas als Textur benutzt;
+             der CPU-Weg ist minimal langsamer, aber auf allen Chips zuverlaessig. -->
+        <canvas id="cv-tex" width="16" height="16" style="display:none"></canvas>
         <!-- Der NFT-Marker wird per JavaScript aus werke.js eingefügt -->
         <a-entity camera>
             <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -2"
@@ -728,9 +733,45 @@
     // Kalibrier-Zustand (bezieht sich auf das aktuelle Werk)
     let K = { px:0, py:0, pz:0, rx:0, ry:0, rz:0, s:1 };
     let arVideoEl = null;
+
+    // ANDROID-TEXTURWEG: siehe Kommentar am Canvas #cv-tex oben. Auf Android laufen
+    // die AR-Overlays ueber das Canvas, sonst direkt ueber das Video.
+    const ANDROID = /Android/i.test(navigator.userAgent);
+    const cvTex = document.getElementById("cv-tex");
+    const cvCtx = cvTex.getContext("2d");
+    let cvLaeuft = false;
+    function cvZeichnen() {
+        if (video.readyState >= 2 && video.videoWidth) {
+            if (cvTex.width !== video.videoWidth) {
+                cvTex.width = video.videoWidth; cvTex.height = video.videoHeight;
+            }
+            cvCtx.drawImage(video, 0, 0, cvTex.width, cvTex.height);
+            document.querySelectorAll("[data-cvtex]").forEach(el => {
+                const m = el.getObject3D && el.getObject3D("mesh");
+                if (m && m.material && m.material.map) m.material.map.needsUpdate = true;
+            });
+        }
+    }
+    function cvPump() {
+        if (!video.paused) cvZeichnen();
+        requestAnimationFrame(cvPump);
+    }
+    const istOverlayVideo = el => el && (el.tagName === "A-VIDEO" || el.dataset.cvtex);
+    if (ANDROID) {
+        // auch der Demo-Modus (cheat-video) muss auf den Canvas-Weg umziehen
+        const cv = document.getElementById("cheat-video");
+        cv.removeAttribute("src");
+        cv.setAttribute("material", "src: #cv-tex; shader: flat");
+        cv.dataset.cvtex = "1";
+    }
+
     // Sobald das Video wirklich Bilder liefert, Overlay wieder einblenden
     document.getElementById("ki-video").addEventListener("playing", () => {
-        if (arVideoEl && arVideoEl.tagName === "A-VIDEO") arVideoEl.setAttribute("visible", "true");
+        if (ANDROID) {
+            cvZeichnen(); // ersten Frame sofort holen, damit kein alter Inhalt aufblitzt
+            if (!cvLaeuft) { cvLaeuft = true; requestAnimationFrame(cvPump); }
+        }
+        if (istOverlayVideo(arVideoEl)) arVideoEl.setAttribute("visible", "true");
     });
 
     // GERÄTE-DELTA: gleicht Geräteunterschiede (Kameraoptik, Viewport) aus.
@@ -852,8 +893,16 @@
         // fertiges Video? Sonst Standbild als Platzhalter (Demo-Betrieb).
         let el = null;
         if (!w.inProduktion && videoAsset) {
-            el = document.createElement("a-video");
-            el.setAttribute("src", "#" + videoAsset);
+            if (ANDROID) {
+                // Android bekommt eine Flaeche mit Canvas-Textur statt der
+                // direkten Video-Textur (schwarze-Frames-Problem, s. o.)
+                el = document.createElement("a-plane");
+                el.setAttribute("material", "src: #cv-tex; shader: flat");
+                el.dataset.cvtex = "1";
+            } else {
+                el = document.createElement("a-video");
+                el.setAttribute("src", "#" + videoAsset);
+            }
         } else if (w.bild) {
             el = document.createElement("a-image");
             el.setAttribute("src", w.bild);
@@ -891,7 +940,7 @@
             arVideoEl = overlay;
             // Schwarzer-Kasten-Fix: nach einem Quellenwechsel rendert die Video-
             // Textur schwarz, bis das Video Bilddaten hat. Solange ausblenden.
-            if (overlay && overlay.tagName === "A-VIDEO")
+            if (istOverlayVideo(overlay))
                 overlay.setAttribute("visible", video.readyState >= 2 ? "true" : "false");
             kalLaden(w);
             tourMarkerGefunden(w);
