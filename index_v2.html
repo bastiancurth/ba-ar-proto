@@ -207,20 +207,6 @@
         #tour-punkte i.aktiv { background:var(--akzent); }
         #tour-punkte i.fertig { background:var(--ok); }
 
-        /* ============ PASST-CHECK (einmaliger Assistent nach dem ersten Tracking) ============ */
-        #passt-panel { display:none; position:fixed; left:12px; right:12px; bottom:14px; z-index:60;
-            background:rgba(8,12,16,.94); border:1px solid rgba(255,255,255,.15); border-radius:16px;
-            padding:14px 16px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.5); }
-        #passt-panel p { margin:0 0 10px; font-size:1.02rem; font-weight:600; text-align:center; }
-        .passt-knoepfe { display:flex; gap:10px; }
-        .passt-knoepfe .btn { flex:1; }
-        .passt-zeile { display:flex; align-items:center; gap:10px; margin:8px 0; }
-        .passt-zeile span { width:64px; font-size:.95rem; opacity:.85; }
-        .passt-zeile button { flex:1; font-size:1.3rem; padding:10px 0; border-radius:12px; border:none;
-            background:rgba(255,255,255,.12); color:#fff; }
-        .passt-zeile button:active { background:rgba(255,255,255,.28); }
-        #passt-fertig { width:100%; margin-top:10px; }
-
         /* ============ JUSTIER-MODUS (versteckt; dunkel, weil er ueber dem Kamerabild liegt) ============ */
         #kalib-panel {
             display: none; position: fixed; left: 12px; right: 12px;
@@ -493,23 +479,6 @@
             <button id="kalib-geraet" onclick="kalGeraetSpeichern()">Für dieses Gerät speichern</button>
             <button id="kalib-geraet-weg" onclick="kalGeraetLoeschen()">Geräte-Justierung löschen</button>
             <button id="kalib-zu" onclick="kalibToggle(false)">Schließen</button>
-        </div>
-    </div>
-
-    <!-- Passt-Check: erscheint einmal pro Gerät nach dem ersten Tracking mit Video -->
-    <div id="passt-panel">
-        <div id="passt-frage">
-            <p>Liegt das Video genau auf dem Bild?</p>
-            <div class="passt-knoepfe">
-                <button class="btn" onclick="passtJa()">✅ Passt</button>
-                <button class="btn" onclick="passtAnpassen()">🔧 Anpassen</button>
-            </div>
-        </div>
-        <div id="passt-regler" style="display:none">
-            <div class="passt-zeile"><span>Größe</span><button onclick="pk('s',-1)">−</button><button onclick="pk('s',1)">＋</button></div>
-            <div class="passt-zeile"><span>Höhe</span><button onclick="pk('py',1)">▲</button><button onclick="pk('py',-1)">▼</button></div>
-            <div class="passt-zeile"><span>Seite</span><button onclick="pk('px',-1)">◀</button><button onclick="pk('px',1)">▶</button></div>
-            <button class="btn" id="passt-fertig" onclick="passtFertig()">✅ Fertig, für dieses Gerät merken</button>
         </div>
     </div>
 
@@ -846,13 +815,14 @@
     // das Delta wird im Browser gespeichert und auf ALLE Werke angewendet.
     // Die Werte in werke.js bleiben die Referenz (eingemessen am iPhone 13 mini).
     const r2 = v => Math.round(v * 100) / 100;
+    const KALIB_VERSION = 2; // v1 verschob im einfachen Assistenten irrtuemlich die Y-Achse
     let geraeteDelta = { dx:0, dy:0, dz:0, ds:1 };
     const neutralesDelta = () => ({ dx:0, dy:0, dz:0, ds:1 });
     function deltaFuer(w) {
         if (!w) return neutralesDelta();
         try {
             const g = JSON.parse(localStorage.getItem("bra_geraeteDelta:" + w.id) || "null");
-            if (g && [g.dx,g.dy,g.dz,g.ds].every(Number.isFinite) &&
+            if (g && g.v === KALIB_VERSION && [g.dx,g.dy,g.dz,g.ds].every(Number.isFinite) &&
                 Math.abs(g.dx) <= 100 && Math.abs(g.dy) <= 100 && Math.abs(g.dz) <= 100 &&
                 g.ds >= 0.5 && g.ds <= 2) return g;
         } catch(e) {}
@@ -1042,7 +1012,6 @@
                 videoWerk = w;
                 if (w.videoIdle) { idleZeigen(w); geschichteBtn.style.display = "block"; }
                 else { video.muted = false; video.play(); }
-                passtCheckStarten();
             }
             else toast("🖼 " + w.titel + ": Standbild-Modus: Geschichte, Fakten und Chat über den ℹ-Knopf (Browserstimme, bis die Tonspuren da sind).", 3500);
         });
@@ -1750,41 +1719,18 @@
         if (ziel && w.id === ziel.id && !tourGefunden) { tourGefunden = true; tourZeigen(); }
     }
 
-    // PASST-CHECK: fragt einmal pro Gerät nach dem ersten stabilen Tracking nach.
-    let passtGefragt = false;
-    function passtCheckStarten() {
-        if (passtGefragt) return;
-        try { if (aktuellesWerk && localStorage.getItem("bra_kalibOk:" + aktuellesWerk.id) === "1") return; } catch(e) {}
-        passtGefragt = true;
-        setTimeout(() => { document.getElementById("passt-panel").style.display = "block"; }, 1500);
-    }
-    window.passtJa = function() {
-        document.getElementById("passt-panel").style.display = "none";
-        try { if (aktuellesWerk) localStorage.setItem("bra_kalibOk:" + aktuellesWerk.id, "1"); } catch(e) {}
-    };
-    window.passtAnpassen = function() {
-        document.getElementById("passt-frage").style.display = "none";
-        document.getElementById("passt-regler").style.display = "block";
-    };
-    window.pk = function(achse, richtung) {
-        if (achse === "s") K.s = r2(K.s * (richtung > 0 ? 1.05 : 0.95));
-        else K[achse] = r2(K[achse] + 2 * richtung);
-        kalAnwenden();
-    };
-    window.passtFertig = function() {
-        document.getElementById("passt-panel").style.display = "none";
-        document.getElementById("passt-regler").style.display = "none";
-        document.getElementById("passt-frage").style.display = "block";
-        kalGeraetSpeichern();
-        try { if (aktuellesWerk) localStorage.setItem("bra_kalibOk:" + aktuellesWerk.id, "1"); } catch(e) {}
-    };
-
     window.kalGeraetSpeichern = function() {
         if (!aktuellesWerk) { toast("Erst ein Werk öffnen und justieren.", 3000); return; }
         const b = kalBasis(aktuellesWerk);
-        geraeteDelta = { dx:r2(K.px - b.px), dy:r2(K.py - b.py), dz:r2(K.pz - b.pz), ds: b.s ? r2(K.s / b.s) : 1 };
+        geraeteDelta = { v:KALIB_VERSION, dx:r2(K.px - b.px), dy:r2(K.py - b.py), dz:r2(K.pz - b.pz), ds: b.s ? r2(K.s / b.s) : 1 };
         try {
             localStorage.setItem("bra_geraeteDelta:" + aktuellesWerk.id, JSON.stringify(geraeteDelta));
+            console.log("[KALIBRIERUNG] werkweise gespeichert", {
+                id: aktuellesWerk.id,
+                basis: b,
+                korrektur: geraeteDelta,
+                ergebnis: { position: `${K.px} ${K.py} ${K.pz}`, scale: K.s }
+            });
             toast("✅ Justierung nur für dieses Werk gespeichert.", 3500);
         } catch(e) { toast("Speichern nicht möglich (Privatmodus?). Justierung gilt nur für diese Sitzung.", 4500); }
     };
