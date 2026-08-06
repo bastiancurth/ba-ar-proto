@@ -534,7 +534,7 @@
     <a-scene
         embedded
         vr-mode-ui="enabled: false;"
-        renderer="logarithmicDepthBuffer: true; precision: medium;"
+        renderer="logarithmicDepthBuffer: false; precision: high;"
         arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
             <video id="ki-video" preload="auto" loop crossorigin muted playsinline></video>
@@ -543,7 +543,8 @@
         </a-assets>
         <!-- Umweg fuer Android: manche Geraete liefern beim direkten
              Video-zu-WebGL-Upload schwarze Frames. -->
-        <canvas id="cv-tex" width="16" height="16" style="display:none"></canvas>
+        <canvas id="cv-tex" width="16" height="16"
+                style="position:fixed;left:-10000px;top:0;width:1px;height:1px;pointer-events:none"></canvas>
         <!-- Der NFT-Marker wird per JavaScript aus werke.js eingefügt -->
         <a-entity camera>
             <a-video id="cheat-video" src="#ki-video" visible="false" position="0 0 -2"
@@ -639,7 +640,14 @@
         videoModus = "idle";
         video.loop = true; video.muted = true;
         if (video.getAttribute("src") !== w.videoIdle) video.src = w.videoIdle;
-        video.play().catch(() => {});
+        video.play().catch(err => {
+            console.error("[VIDEO] Idle konnte nicht gestartet werden", {
+                id: w.id, src: video.currentSrc || video.src,
+                readyState: video.readyState, networkState: video.networkState,
+                fehler: err && err.message
+            });
+            if (istOverlayVideo(arVideoEl)) arVideoEl.setAttribute("visible", "false");
+        });
         geschichteBtn.textContent = "▶ Meine Geschichte hören";
     }
 
@@ -743,28 +751,51 @@
     const ANDROID = /Android/i.test(navigator.userAgent);
     const CANVAS_TEXTUR = ANDROID && params.get("textur") !== "video";
     const cvTex = document.getElementById("cv-tex");
-    const cvCtx = cvTex.getContext("2d", { alpha: false, desynchronized: true });
+    // Kein `desynchronized`: Auf Android/Mali darf der WebGL-Upload nicht auf
+    // einen Canvas zugreifen, waehrend dessen neuer Videoframe noch geschrieben wird.
+    const cvCtx = cvTex.getContext("2d", { alpha: false });
+    if (params.get("texdebug") === "1") {
+        // Zeigt exakt den 2D-Canvas vor dem WebGL-Upload. Ist diese Vorschau sauber,
+        // liegt ein verbleibender schwarzer Bereich sicher erst im WebGL-Schritt.
+        Object.assign(cvTex.style, {
+            left:"8px", top:"340px", width:"160px", height:"auto", zIndex:"9999",
+            border:"3px solid #ff0", background:"#f0f", pointerEvents:"none"
+        });
+    }
     let cvLaeuft = false;
+    function cvTexturAktualisieren(el) {
+        const mesh = el.getObject3D && el.getObject3D("mesh");
+        if (!mesh || !mesh.material) return;
+        // Das Overlay darf beim Schwenken nicht am Sichtfeldrand aussortiert
+        // werden. Ein fester Renderplatz vermeidet zudem mobile Tiefenartefakte.
+        mesh.frustumCulled = false;
+        mesh.renderOrder = 100;
+        mesh.material.depthTest = false;
+        mesh.material.depthWrite = false;
+        const groesse = cvTex.width + "x" + cvTex.height;
+        let map = mesh.material.map;
+        // A-Frame legt die Textur an, solange der Canvas noch 16x16 gross ist.
+        // Nach einem Resize reicht needsUpdate auf manchen Android/Mali-GPUs nicht:
+        // deshalb einmal eine neue CanvasTexture mit der echten Groesse erzeugen.
+        if (!map || !map.userData || map.userData.braCanvasGroesse !== groesse) {
+            map = new THREE.CanvasTexture(cvTex);
+            map.userData.braCanvasGroesse = groesse;
+            map.generateMipmaps = false;
+            map.minFilter = THREE.LinearFilter;
+            map.magFilter = THREE.LinearFilter;
+            map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;
+            mesh.material.map = map;
+            mesh.material.needsUpdate = true;
+        }
+        map.needsUpdate = true;
+    }
     function cvZeichnen() {
         if (video.readyState >= 2 && video.videoWidth) {
             if (cvTex.width !== video.videoWidth || cvTex.height !== video.videoHeight) {
                 cvTex.width = video.videoWidth; cvTex.height = video.videoHeight;
             }
             cvCtx.drawImage(video, 0, 0, cvTex.width, cvTex.height);
-            document.querySelectorAll("[data-cvtex]").forEach(el => {
-                const m = el.getObject3D && el.getObject3D("mesh");
-                if (m && m.material && m.material.map) {
-                    const map = m.material.map;
-                    // Der Canvas wechselt von 16x16 auf meist 960x720 (NPOT).
-                    // Explizite WebGL1-sichere Parameter verhindern unvollstaendige,
-                    // auf Android schwarz gerenderte Texturen.
-                    map.generateMipmaps = false;
-                    map.minFilter = THREE.LinearFilter;
-                    map.magFilter = THREE.LinearFilter;
-                    map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;
-                    map.needsUpdate = true;
-                }
-            });
+            document.querySelectorAll("[data-cvtex]").forEach(cvTexturAktualisieren);
         }
     }
     function cvPump() {
@@ -798,6 +829,11 @@
 
     // Sobald das Video wirklich Bilder liefert, Overlay wieder einblenden
     document.getElementById("ki-video").addEventListener("playing", () => {
+        console.log("[VIDEO] playing", {
+            src: video.currentSrc || video.src,
+            readyState: video.readyState,
+            size: video.videoWidth + "x" + video.videoHeight
+        });
         if (CANVAS_TEXTUR) {
             cvZeichnen(); // ersten Frame sofort holen, damit kein alter Inhalt aufblitzt
             cvPump();
@@ -983,14 +1019,22 @@
         szene.appendChild(nft);
 
         nft.addEventListener("markerFound", () => {
+            console.log("[AR] markerFound", {
+                id: w.id, titel: w.titel, marker: w.marker,
+                video: w.videoIdle || w.video,
+                readyState: video.readyState,
+                videoSize: video.videoWidth + "x" + video.videoHeight,
+                canvasSize: cvTex.width + "x" + cvTex.height,
+                canvasTextur: CANVAS_TEXTUR
+            });
             status("✅ " + w.titel + " erkannt", "var(--ok)");
             statusBar.style.backgroundColor = "rgba(0,40,15,0.85)";
             if (aktuellesWerk !== w) fuellePanel(w);
             arVideoEl = overlay;
-            // Schwarzer-Kasten-Fix: nach einem Quellenwechsel rendert die Video-
-            // Textur schwarz, bis das Video Bilddaten hat. Solange ausblenden.
-            if (istOverlayVideo(overlay))
-                overlay.setAttribute("visible", video.readyState >= 2 ? "true" : "false");
+            // Im Kamera-Modus wechselt die gemeinsame Videoquelle erst nach dem
+            // Treffer. Bis das neue Werk wirklich `playing` meldet, bleibt genau
+            // dessen Overlay unsichtbar statt als schwarze Flaeche stehenzubleiben.
+            if (istOverlayVideo(overlay)) overlay.setAttribute("visible", "false");
             kalLaden(w);
             tourMarkerGefunden(w);
             freihandBtn.style.display = "block";
@@ -1003,6 +1047,7 @@
             else toast("🖼 " + w.titel + ": Standbild-Modus: Geschichte, Fakten und Chat über den ℹ-Knopf (Browserstimme, bis die Tonspuren da sind).", 3500);
         });
         nft.addEventListener("markerLost", () => {
+            console.log("[AR] markerLost", { id: w.id, titel: w.titel });
             if (freihandModus) return; // Freihand: Wiedergabe laeuft ohne Tracking weiter
             status(kameraModus ? "📷 Suche Werke …" : "🔍 Suche " + w.titel + " …", "var(--fehler)");
             statusBar.style.backgroundColor = "rgba(8,12,16,0.82)";
