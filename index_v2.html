@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#00BAE5">
     <title>Das lebendige Bild: WebAR-Geschichtenerzähler</title>
 
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.8/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <!-- Inhalte: alle Werke, Fakten und Kalibrierwerte liegen in werke.js -->
     <script src="werke.js"></script>
 
@@ -534,16 +534,15 @@
     <a-scene
         embedded
         vr-mode-ui="enabled: false;"
-        renderer="precision: medium; antialias: true; alpha: true;"
-        arjs="sourceType: webcam; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;">
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
+        arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
             <video id="ki-video" preload="auto" loop crossorigin muted playsinline></video>
             <!-- Hinweis: Die Erzaehlstimme ist in die Videos geschnitten.
                  Die separate MP3 (werke.js, Feld audio) dient dem Vorlesen-Knopf. -->
         </a-assets>
-        <!-- Diagnose-Fallback: Normalerweise wird das Video direkt als WebGL-Textur
-             verwendet. Mit ?textur=canvas kann der alte Canvas-Weg gezielt getestet
-             werden, ohne ihn pauschal auf allen Android-Geraeten zu erzwingen. -->
+        <!-- Umweg fuer Android: manche Geraete liefern beim direkten
+             Video-zu-WebGL-Upload schwarze Frames. -->
         <canvas id="cv-tex" width="16" height="16" style="display:none"></canvas>
         <!-- Der NFT-Marker wird per JavaScript aus werke.js eingefügt -->
         <a-entity camera>
@@ -583,22 +582,9 @@
         } catch (e) { /* egal */ }
     }
 
-    if (brauchtKamera && location.protocol !== "file:" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        // Nur anfragen, wenn die Rechte noch NICHT erteilt sind - sonst wuerde unsere
-        // Voranfrage mit der AR.js-eigenen Kameraoeffnung kollidieren (Windows erlaubt
-        // die Kamera oft nur einmal gleichzeitig -> weisser Bildschirm).
-        const voranfrage = () => navigator.mediaDevices.getUserMedia({ video: true })
-            .then(s => { s.getTracks().forEach(tr => tr.stop()); console.log("Kamera-Voranfrage: erlaubt - Seite laedt neu fuer sauberen AR-Start"); location.reload(); })
-            .catch(e => {
-                console.log("Kamera-Voranfrage:", e.name, e.message);
-                setTimeout(() => toast("Kamerazugriff fehlgeschlagen (" + e.name + "). Kamera-Symbol in der Adressleiste pruefen; in Firefox ggf. gespeicherte Blockierung entfernen (Haken 'Entscheidung merken' setzen). Notfalls Chrome/Edge nutzen.", 9000), 1500);
-            });
-        if (navigator.permissions && navigator.permissions.query) {
-            navigator.permissions.query({ name: "camera" })
-                .then(st => { if (st.state === "prompt" || st.state === "denied") voranfrage(); else console.log("Kamerarecht bereits erteilt - AR.js uebernimmt direkt."); })
-                .catch(() => voranfrage());   // Firefox kennt "camera" in permissions.query teils nicht
-        } else voranfrage();
-    }
+    // Nur AR.js darf den Kamerastream oeffnen. Die fruehere Voranfrage oeffnete und
+    // stoppte parallel einen zweiten Stream und lud danach neu. Das konnte mit der
+    // AR.js-Initialisierung kollidieren; Firefox geriet dabei teils in eine Reload-Schleife.
     // Lokaler Doppelklick-Start (file://): das crossorigin-Attribut (fuer WebGL/AR noetig)
     // blockiert dort Video/Audio komplett -> entfernen. Kamera geht unter file:// ohnehin
     // nicht (kein sicherer Kontext); fuer echte lokale Tests LOKAL_STARTEN.bat nutzen (localhost).
@@ -619,6 +605,25 @@
     const startOverlay= document.getElementById("start-overlay");
     const btnStart    = document.getElementById("btn-start");
     const video       = document.getElementById("ki-video");
+    let arKameraInfo  = "noch nicht initialisiert";
+    function kameraInfoLesen(stream) {
+        try {
+            const spur = stream && stream.getVideoTracks && stream.getVideoTracks()[0];
+            if (!spur) return;
+            const s = spur.getSettings ? spur.getSettings() : {};
+            arKameraInfo = JSON.stringify({
+                label: spur.label || "unbekannt", width: s.width, height: s.height,
+                aspectRatio: s.aspectRatio, facingMode: s.facingMode, frameRate: s.frameRate,
+                deviceId: s.deviceId ? String(s.deviceId).slice(0, 12) + "..." : undefined
+            });
+            console.log("AR-Kamera:", arKameraInfo);
+        } catch(e) { arKameraInfo = "nicht auslesbar: " + e.message; }
+    }
+    window.addEventListener("camera-init", e => kameraInfoLesen(e.detail && e.detail.stream));
+    window.addEventListener("arjs-video-loaded", () => {
+        const arV = document.querySelector("#arjs-video") || document.querySelector("video[id^='arjs']");
+        if (arV && arV.srcObject) kameraInfoLesen(arV.srcObject);
+    });
 
     // Nicht zu laut: gedrosselte Lautstaerke fuer Video, Erzaehlung und Chat
     const LAUTSTAERKE = 0.6;
@@ -733,13 +738,12 @@
     let K = { px:0, py:0, pz:0, rx:0, ry:0, rz:0, s:1 };
     let arVideoEl = null;
 
-    // TEXTURWEG: Moderne Android-Browser koennen VideoTexture direkt. Der fruehere
-    // pauschale Canvas-Umweg wurde entfernt: waehrend drawImage und WebGL gleichzeitig
-    // auf den Canvas zugriffen, zeigten einige Android-GPUs bewegliche schwarze Baender.
-    // Der alte Weg bleibt nur fuer eine gezielte Diagnose per ?textur=canvas erhalten.
-    const CANVAS_TEXTUR = params.get("textur") === "canvas";
+    // Android nutzt den Canvas-Texturweg; ?textur=video erlaubt einen gezielten
+    // Vergleichstest, ohne das Standardverhalten anderer Geraete zu veraendern.
+    const ANDROID = /Android/i.test(navigator.userAgent);
+    const CANVAS_TEXTUR = ANDROID && params.get("textur") !== "video";
     const cvTex = document.getElementById("cv-tex");
-    const cvCtx = cvTex.getContext("2d");
+    const cvCtx = cvTex.getContext("2d", { alpha: false, desynchronized: true });
     let cvLaeuft = false;
     function cvZeichnen() {
         if (video.readyState >= 2 && video.videoWidth) {
@@ -749,13 +753,39 @@
             cvCtx.drawImage(video, 0, 0, cvTex.width, cvTex.height);
             document.querySelectorAll("[data-cvtex]").forEach(el => {
                 const m = el.getObject3D && el.getObject3D("mesh");
-                if (m && m.material && m.material.map) m.material.map.needsUpdate = true;
+                if (m && m.material && m.material.map) {
+                    const map = m.material.map;
+                    // Der Canvas wechselt von 16x16 auf meist 960x720 (NPOT).
+                    // Explizite WebGL1-sichere Parameter verhindern unvollstaendige,
+                    // auf Android schwarz gerenderte Texturen.
+                    map.generateMipmaps = false;
+                    map.minFilter = THREE.LinearFilter;
+                    map.magFilter = THREE.LinearFilter;
+                    map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;
+                    map.needsUpdate = true;
+                }
             });
         }
     }
     function cvPump() {
-        if (!video.paused) cvZeichnen();
-        requestAnimationFrame(cvPump);
+        if (cvLaeuft) return;
+        cvLaeuft = true;
+        if (typeof video.requestVideoFrameCallback === "function") {
+            // Nur vollstaendig dekodierte Frames kopieren. Dadurch schreiben Canvas
+            // und WebGL auf Android nicht mehr im selben Render-Takt gegeneinander.
+            const frame = () => {
+                if (!video.paused && !video.ended) cvZeichnen();
+                video.requestVideoFrameCallback(frame);
+            };
+            video.requestVideoFrameCallback(frame);
+        } else {
+            let letzter = 0;
+            const frame = zeit => {
+                if (!video.paused && zeit - letzter >= 33) { letzter = zeit; cvZeichnen(); }
+                requestAnimationFrame(frame);
+            };
+            requestAnimationFrame(frame);
+        }
     }
     const istOverlayVideo = el => el && (el.tagName === "A-VIDEO" || el.dataset.cvtex);
     if (CANVAS_TEXTUR) {
@@ -770,7 +800,7 @@
     document.getElementById("ki-video").addEventListener("playing", () => {
         if (CANVAS_TEXTUR) {
             cvZeichnen(); // ersten Frame sofort holen, damit kein alter Inhalt aufblitzt
-            if (!cvLaeuft) { cvLaeuft = true; requestAnimationFrame(cvPump); }
+            cvPump();
         }
         if (istOverlayVideo(arVideoEl)) arVideoEl.setAttribute("visible", "true");
     });
@@ -781,9 +811,25 @@
     // Die Werte in werke.js bleiben die Referenz (eingemessen am iPhone 13 mini).
     const r2 = v => Math.round(v * 100) / 100;
     let geraeteDelta = { dx:0, dy:0, dz:0, ds:1 };
+    const neutralesDelta = () => ({ dx:0, dy:0, dz:0, ds:1 });
+    function deltaFuer(w) {
+        if (!w) return neutralesDelta();
+        try {
+            const g = JSON.parse(localStorage.getItem("bra_geraeteDelta:" + w.id) || "null");
+            if (g && [g.dx,g.dy,g.dz,g.ds].every(Number.isFinite) &&
+                Math.abs(g.dx) <= 100 && Math.abs(g.dy) <= 100 && Math.abs(g.dz) <= 100 &&
+                g.ds >= 0.5 && g.ds <= 2) return g;
+        } catch(e) {}
+        return neutralesDelta();
+    }
     try {
         const g = JSON.parse(localStorage.getItem("bra_geraeteDelta") || "null");
-        if (g && typeof g.ds === "number") geraeteDelta = g;
+        // Alte globale Justierungen nicht mehr anwenden: sie verschieben jeden
+        // unterschiedlich grossen Marker um einen anderen relativen Betrag.
+        if (g) {
+            localStorage.removeItem("bra_geraeteDelta");
+            localStorage.removeItem("bra_kalibOk");
+        }
     } catch(e) { /* Privatmodus o.ä.; dann eben ohne */ }
 
     // MARKER-MASSE: Pixelbreite, Pixelhoehe, dpi der NFT-Marker (aus den .iset-Dateien
@@ -820,6 +866,7 @@
 
     function kalLaden(w) {
         const b = kalBasis(w);
+        geraeteDelta = deltaFuer(w);
         K = { px:r2(b.px + geraeteDelta.dx), py:r2(b.py + geraeteDelta.dy), pz:r2(b.pz + geraeteDelta.dz),
               rx:b.rx, ry:b.ry, rz:b.rz, s:r2(b.s * geraeteDelta.ds) };
     }
@@ -897,7 +944,7 @@
             if (CANVAS_TEXTUR) {
                 // Nur expliziter Diagnosemodus; nicht mehr automatisch auf Android.
                 el = document.createElement("a-plane");
-                el.setAttribute("material", "src: #cv-tex; shader: flat; side: double");
+                el.setAttribute("material", "src: #cv-tex; shader: flat; side: double; depthTest: false; depthWrite: false");
                 el.dataset.cvtex = "1";
             } else {
                 el = document.createElement("a-video");
@@ -910,11 +957,12 @@
         }
         if (!el) return null;
         const b = kalBasis(w);
+        const d = deltaFuer(w);
         el.setAttribute("width", String(b.b));
         el.setAttribute("height", String(b.h));
-        el.setAttribute("position", `${r2(b.px + geraeteDelta.dx)} ${r2(b.py + geraeteDelta.dy)} ${r2(b.pz + geraeteDelta.dz)}`);
+        el.setAttribute("position", `${r2(b.px + d.dx)} ${r2(b.py + d.dy)} ${r2(b.pz + d.dz)}`);
         el.setAttribute("rotation", `${b.rx} ${b.ry} ${b.rz}`);
-        const es = r2(b.s * geraeteDelta.ds);
+        const es = r2(b.s * d.ds);
         el.setAttribute("scale", `${es} ${es} ${es}`);
         nft.appendChild(el);
         return el;
@@ -1053,6 +1101,7 @@
         if (tourAktiv && kameraModus) tourZeigen();
         setTimeout(() => {
             const arVideo = document.querySelector("video[id^='arjs']") || document.querySelector("#arjs-video");
+            if (arVideo && arVideo.srcObject) kameraInfoLesen(arVideo.srcObject);
             if (!arVideo || arVideo.readyState === 0)
                 toast("Keine Kamera gefunden. Kamera-Symbol in der Adressleiste auf Zulassen stellen, andere Kamera-Apps/Tabs schließen und unter Windows: Einstellungen > Datenschutz > Kamera freigeben. Danach neu laden.", 9000);
         }, 6000);
@@ -1380,7 +1429,16 @@
     // Fuers Experiment-Protokoll: alle technischen Eckdaten mit einem Klick
     window.geraeteInfoKopieren = function() {
         let webgl = "nein";
-        try { const c = document.createElement("canvas"); if (c.getContext("webgl") || c.getContext("experimental-webgl")) webgl = "ja"; } catch (e) {}
+        let gpu = "unbekannt";
+        try {
+            const c = document.createElement("canvas");
+            const gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+            if (gl) {
+                webgl = "ja";
+                const ext = gl.getExtension("WEBGL_debug_renderer_info");
+                if (ext) gpu = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+            }
+        } catch (e) {}
         const info = [
             "GERAETE-INFO (" + new Date().toLocaleString("de-DE") + ")",
             "Werk: " + (aktuellesWerk ? aktuellesWerk.id : (videoWerk ? videoWerk.id : "-")),
@@ -1388,6 +1446,8 @@
             "Browser/Geraet (User-Agent): " + navigator.userAgent,
             "Bildschirm: " + screen.width + "x" + screen.height + " @ " + window.devicePixelRatio + "x",
             "WebGL: " + webgl,
+            "GPU/WebGL-Renderer: " + gpu,
+            "AR-Kamerastream: " + arKameraInfo,
             "Justier-Delta (Geraeteprofil): " + JSON.stringify(geraeteDelta)
         ].join("\n");
         (navigator.clipboard ? navigator.clipboard.writeText(info) : Promise.reject())
@@ -1649,13 +1709,13 @@
     let passtGefragt = false;
     function passtCheckStarten() {
         if (passtGefragt) return;
-        try { if (localStorage.getItem("bra_kalibOk") === "1") return; } catch(e) {}
+        try { if (aktuellesWerk && localStorage.getItem("bra_kalibOk:" + aktuellesWerk.id) === "1") return; } catch(e) {}
         passtGefragt = true;
         setTimeout(() => { document.getElementById("passt-panel").style.display = "block"; }, 1500);
     }
     window.passtJa = function() {
         document.getElementById("passt-panel").style.display = "none";
-        try { localStorage.setItem("bra_kalibOk", "1"); } catch(e) {}
+        try { if (aktuellesWerk) localStorage.setItem("bra_kalibOk:" + aktuellesWerk.id, "1"); } catch(e) {}
     };
     window.passtAnpassen = function() {
         document.getElementById("passt-frage").style.display = "none";
@@ -1671,7 +1731,7 @@
         document.getElementById("passt-regler").style.display = "none";
         document.getElementById("passt-frage").style.display = "block";
         kalGeraetSpeichern();
-        try { localStorage.setItem("bra_kalibOk", "1"); } catch(e) {}
+        try { if (aktuellesWerk) localStorage.setItem("bra_kalibOk:" + aktuellesWerk.id, "1"); } catch(e) {}
     };
 
     window.kalGeraetSpeichern = function() {
@@ -1679,13 +1739,18 @@
         const b = kalBasis(aktuellesWerk);
         geraeteDelta = { dx:r2(K.px - b.px), dy:r2(K.py - b.py), dz:r2(K.pz - b.pz), ds: b.s ? r2(K.s / b.s) : 1 };
         try {
-            localStorage.setItem("bra_geraeteDelta", JSON.stringify(geraeteDelta));
-            toast("✅ Geräte-Justierung gespeichert, gilt ab jetzt für alle Werke auf diesem Gerät.", 4500);
+            localStorage.setItem("bra_geraeteDelta:" + aktuellesWerk.id, JSON.stringify(geraeteDelta));
+            toast("✅ Justierung nur für dieses Werk gespeichert.", 3500);
         } catch(e) { toast("Speichern nicht möglich (Privatmodus?). Justierung gilt nur für diese Sitzung.", 4500); }
     };
     window.kalGeraetLoeschen = function() {
         geraeteDelta = { dx:0, dy:0, dz:0, ds:1 };
-        try { localStorage.removeItem("bra_geraeteDelta"); } catch(e) {}
+        try {
+            if (aktuellesWerk) {
+                localStorage.removeItem("bra_geraeteDelta:" + aktuellesWerk.id);
+                localStorage.removeItem("bra_kalibOk:" + aktuellesWerk.id);
+            }
+        } catch(e) {}
         if (aktuellesWerk) { kalLaden(aktuellesWerk); kalAnwenden(); kalAnzeigen(); }
         toast("Geräte-Justierung gelöscht, iPhone-Referenzwerte aktiv.", 3500);
     };
