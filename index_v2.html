@@ -1344,27 +1344,50 @@
         // Nur Werke anlegen, deren Marker-Dateien wirklich existieren - alles andere
         // wird gar nicht erst geladen (kein Rechenaufwand, keine Konsolen-Fehler).
         // Sobald neue Marker in assets/markers/ liegen, ist das Werk automatisch dabei.
-        // Safari/WebKit kann beim parallelen Initialisieren mehrerer NFT-Datensätze
-        // hängen bleiben. Deshalb immer nur einen Marker laden und erst nach dessen
-        // arjs-nft-loaded-Ereignis den nächsten anlegen.
-        let markerBereit = 0;
+        // Chromium unter Android verarbeitet im Test alle sieben Marker parallel
+        // in wenigen Sekunden. Safari, iOS-Browser und Firefox erhalten weiterhin
+        // die vorsichtige Warteschlange gegen haengende NFT-Initialisierungen.
         let markerLadeIndex = 0;
         const naechstenMarkerLaden = () => {
             if (markerLadeIndex >= teilnehmer.length) return;
             const w = teilnehmer[markerLadeIndex++];
             console.log("[AR] lade Marker " + markerLadeIndex + "/" + teilnehmer.length, w.id);
+            let abgeschlossen = false;
+            let ereignisFreigegeben = false;
+            let waechter = null;
+            const fortsetzen = grund => {
+                if (abgeschlossen) return;
+                abgeschlossen = true;
+                if (waechter) clearTimeout(waechter);
+                window.removeEventListener("arjs-nft-loaded", beiMarkerBereit);
+                console.log("[AR] Marker-Warteschlange weiter", { id:w.id, grund:grund });
+                if (markerLadeIndex < teilnehmer.length) {
+                    toast("Marker werden vorbereitet: " + markerLadeIndex + " von " + teilnehmer.length, 2600);
+                    setTimeout(naechstenMarkerLaden, 250);
+                } else {
+                    toast("✅ Alle " + teilnehmer.length + " Marker wurden gestartet. Die Erkennung kann noch kurz laden.", 5000);
+                }
+            };
+            const beiMarkerBereit = () => {
+                if (ereignisFreigegeben) fortsetzen("Ladeereignis");
+            };
+            window.addEventListener("arjs-nft-loaded", beiMarkerBereit);
             nftAnlegen(w, w.inProduktion ? null : "ki-video");
+            // Alte oder globale Ereignisse dürfen nicht sofort den gerade erst
+            // angelegten Marker überspringen. Danach gewinnt das echte Ereignis.
+            setTimeout(() => { ereignisFreigegeben = true; }, 500);
+            waechter = setTimeout(() => fortsetzen("Zeitwächter nach 3,5 Sekunden"), 3500);
         };
-        window.addEventListener("arjs-nft-loaded", () => {
-            markerBereit++;
-            if (markerBereit < teilnehmer.length) {
-                toast("Marker werden geladen: " + markerBereit + " von " + teilnehmer.length + " bereit …", 3000);
-                setTimeout(naechstenMarkerLaden, 100);
+        const bauen = () => {
+            if (CHROMIUM_ANDROID) {
+                teilnehmer.forEach(w => nftAnlegen(w, w.inProduktion ? null : "ki-video"));
+                markerLadeIndex = teilnehmer.length;
+                console.log("[AR] Android Chromium lädt alle Marker parallel", teilnehmer.map(w => w.id));
+                toast("✅ Alle " + teilnehmer.length + " Marker werden gleichzeitig vorbereitet.", 5000);
             } else {
-                toast("✅ Alle " + markerBereit + " Marker bereit - jetzt aufs Werk halten!", 5000);
+                naechstenMarkerLaden();
             }
-        });
-        const bauen = () => naechstenMarkerLaden();
+        };
         if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen, { once:true });
         if (teilnehmer.length > 3)
             console.log("Hinweis: " + teilnehmer.length + " Marker aktiv - auf aelteren Geraeten ggf. reduzieren.");
