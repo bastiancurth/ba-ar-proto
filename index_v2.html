@@ -7,7 +7,9 @@
     <title>Das lebendige Bild: WebAR-Geschichtenerzähler</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <!-- Feste Version statt /master: verhindert unangekündigte Änderungen und
+         enthält die aktuellen Safari-Korrekturen von AR.js. -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.8/aframe/build/aframe-ar-nft.js"></script>
     <!-- Inhalte: alle Werke, Fakten und Kalibrierwerte liegen in werke.js -->
     <script src="werke.js"></script>
 
@@ -85,7 +87,7 @@
                       background: linear-gradient(90deg, var(--thb-cyan-dunkel), var(--thb-cyan));
                       transition: width .35s ease; }
 
-        .btn { width: 100%; max-width: 380px; padding: 16px 18px; margin-top: 12px;
+        .btn { display: block; width: 100%; max-width: 380px; padding: 16px 18px; margin: 12px auto 0;
                font-size: 15px; font-weight: 700; border-radius: 999px; transition: transform .12s, filter .2s; }
         .btn:active { transform: scale(.97); }
         .btn-start { background: linear-gradient(120deg, var(--thb-cyan), var(--thb-cyan-dunkel));
@@ -95,10 +97,13 @@
         /* alte .btn-cheat-Kleinstil-Regel am 19.07.2026 durch grosse Variante ersetzt */
 
         /* ============ WERKAUSWAHL / LEXIKON ============ */
-        #werk-menu { display: none; position: fixed; inset: 0; z-index: 11000; overflow-y: auto;
+        #werk-menu { display: none; position: fixed; inset: 0; z-index: 11000; overflow-y: scroll;
+                     overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch;
                      background: var(--papier);
                      padding: calc(20px + var(--safe-o)) 20px calc(30px + var(--safe-u)); }
         #werk-menu .inner { max-width: 620px; margin: 0 auto; }
+        #werk-menu button { appearance: none; -webkit-appearance: none; }
+        #werk-menu :focus-visible { outline: 4px solid #ffbf00; outline-offset: 4px; }
         #werk-menu h1 { font-size: 26px; margin: 6px 0 4px; color: var(--text); }
         #werk-menu p { color: var(--text-leise); font-size: 13.5px; margin-bottom: 16px; }
         .werk-card { display: block; background: #fff; border: 1px solid var(--rand);
@@ -119,14 +124,39 @@
                            border-radius: var(--radius); padding: 13px 16px;
                            color: #6e4300; font-size: 13px; line-height: 1.55; text-align: left; }
 
-        /* ============ FAKTEN: BUTTON + BOTTOM SHEET ============ */
-        #fakten-btn {
-            position: fixed; right: 16px; bottom: calc(18px + var(--safe-u)); z-index: 9500;
-            width: 58px; height: 58px; border-radius: 50%; display: none;
-            align-items: center; justify-content: center; font-size: 23px; font-weight: 800;
-            background: var(--thb-rot); color: #fff; border: none;
-            box-shadow: 0 8px 22px rgba(206,17,38,.4);
-        }
+        /* ============ INHALTE: drei gleichwertige, verstaendliche Aktionen ============ */
+        #werk-aktionen { position: fixed; left: 50%; bottom: calc(14px + var(--safe-u));
+            transform: translateX(-50%); z-index: 9500; display: none;
+            width: min(94vw, 540px); grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px;
+            padding: 8px; border-radius: 20px; background: rgba(8,12,16,.9);
+            border: 1px solid rgba(255,255,255,.18); box-shadow: 0 10px 30px rgba(0,0,0,.38); }
+        .werk-aktion { min-width: 0; min-height: 64px; padding: 7px 4px; border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; color: var(--text); border: 2px solid transparent;
+            font-size: clamp(11px,3.2vw,14px); line-height: 1.12; font-weight: 800; text-align: center; }
+        .werk-aktion .aktion-icon { font-size: 22px; line-height: 1; }
+        .werk-aktion.hauptaktion { background: var(--thb-cyan); color: #06232b; }
+        .werk-aktion:focus-visible, #ansicht-wahl button:focus-visible, #zur-kamera-btn:focus-visible {
+            outline: 4px solid #ffbf00; outline-offset: 3px; }
+
+        /* Entscheidung nach der Erkennung: erst Ansicht, dann Inhalte. */
+        #ansicht-wahl { position: fixed; inset: 0; z-index: 9700; display: none;
+            align-items: flex-end; justify-content: center; padding: 18px 14px calc(18px + var(--safe-u));
+            background: linear-gradient(to top, rgba(4,8,12,.82), rgba(4,8,12,.08) 62%); }
+        #ansicht-wahl .wahl-karte { width: min(94vw,520px); padding: 20px; border-radius: 22px;
+            background: rgba(255,255,255,.98); color: var(--text); text-align: center;
+            box-shadow: 0 16px 50px rgba(0,0,0,.45); }
+        #ansicht-wahl h2 { margin: 0 0 6px; font-size: clamp(21px,5vw,27px); }
+        #ansicht-wahl p { margin: 0 0 16px; color: var(--text-leise); font-size: 15px; line-height: 1.45; }
+        .wahl-knoepfe { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .wahl-knopf { min-height: 62px; padding: 12px 16px; border-radius: 16px; font-size: 17px;
+            font-weight: 800; line-height: 1.25; }
+        #wahl-bequem { background: var(--thb-cyan); color: #06232b; }
+        #wahl-ar { background: #fff; color: var(--text); border: 2px solid var(--thb-cyan); }
+        #zur-kamera-btn { position: fixed; right: 14px; bottom: calc(98px + var(--safe-u)); z-index: 9550;
+            display: none; min-height: 48px; padding: 10px 15px; border-radius: 999px;
+            background: rgba(255,255,255,.96); color: var(--text); border: 2px solid var(--thb-cyan);
+            font-size: 14px; font-weight: 800; box-shadow: 0 5px 18px rgba(0,0,0,.25); }
         #fakten-panel {
             position: fixed; left: 0; right: 0; bottom: 0; z-index: 9800;
             background: var(--papier); border: 1px solid var(--rand); border-bottom: none;
@@ -158,7 +188,6 @@
                             border-radius: 22px; border-bottom: 1px solid var(--rand);
                             max-height: 80vh; transform: translateX(120%); }
             #fakten-panel.offen { transform: translateX(0); }
-            #fakten-btn { right: 24px; bottom: 24px; }
         }
 
         /* Tabs im Panel */
@@ -202,6 +231,7 @@
         #tour-status { font-size:.85rem; margin:0 0 8px; opacity:.9; }
         .tour-knoepfe { display:flex; gap:8px; }
         .tour-knoepfe .btn { flex:1; padding:10px 0; font-size:.95rem; }
+        .tour-knoepfe .btn:disabled { opacity:.52; cursor:default; }
         #tour-punkte { display:flex; gap:6px; justify-content:center; margin-top:10px; }
         #tour-punkte i { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.25); }
         #tour-punkte i.aktiv { background:var(--akzent); }
@@ -319,16 +349,11 @@
         #freihand-layer video, #freihand-layer .freihand-standbild { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             max-width: 86vw; max-height: 68vh; border-radius: 6px; z-index: 1;
             box-shadow: 0 18px 60px rgba(0,0,0,.65); }
-        #freihand-btn { position: fixed; right: 16px; top: 64px; z-index: 45; display: none;
-            background: rgba(8,12,16,.85); color: #fff; border: 1px solid rgba(255,255,255,.25);
-            border-radius: 999px; padding: 4px; font-size: .85rem; font-weight: 600; }
-        #freihand-btn span { display: inline-block; padding: 7px 12px; border-radius: 999px; opacity: .65; }
-        #freihand-btn span.an { background: var(--akzent); color: #06232b; opacity: 1; font-weight: 800; }
-        #geschichte-btn { position: fixed; left: 50%; transform: translateX(-50%);
-                          bottom: calc(24px + var(--safe-u)); z-index: 9400; display: none;
-                          padding: 13px 26px; border-radius: 999px; font-size: 14px; font-weight: 800;
-                          background: linear-gradient(120deg, var(--thb-cyan), var(--thb-cyan-dunkel));
-                          color: #fff; box-shadow: 0 8px 22px rgba(0,140,180,.45); }
+        @media (max-width: 350px) {
+            #werk-aktionen { width: 98vw; gap: 5px; padding: 6px; }
+            .werk-aktion { min-height: 60px; font-size: 11px; }
+            .werk-aktion .aktion-icon { font-size: 19px; }
+        }
 
         /* ============ TOAST ============ */
         #toast { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -346,7 +371,7 @@
     <a id="home-btn" href="index_v2.html" aria-label="Zurück zur Werkübersicht">⌂</a>
 
     <!-- Werkauswahl, falls die Seite ohne ?werk=... aufgerufen wird -->
-    <div id="werk-menu"><div class="inner">
+    <div id="werk-menu" tabindex="0" aria-label="Hauptmenü"><div class="inner">
         <img class="thb-logo" src="assets/thb_logo.svg" alt="Technische Hochschule Brandenburg">
         <div class="cyanblock" style="max-width:none">
             <div class="ov-badge">Das lebendige Bild · Brandenburg an der Havel</div>
@@ -387,11 +412,11 @@
             Werke anzeigt und Handys sie vom Bildschirm scannen. Ein Prototyp im Rahmen der Masterarbeit von Bastian Curth (THB, 2026).
         </details>
         <div class="modus-knoepfe" id="menu-stufe1">
-            <a class="btn btn-start" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;cursor:pointer" onclick="menuBereich('ar')">📷 AR-Erlebnis</a>
-            <a class="btn ov-zurueck" style="margin-top:12px;cursor:pointer" onclick="menuBereich('lexikon')">📖 Lexikon: Werke ansehen (ohne Kamera)</a>
+            <button type="button" class="btn btn-start" onclick="menuBereich('ar')">📷 AR-Erlebnis</button>
+            <button type="button" class="btn ov-zurueck" onclick="menuBereich('lexikon')">📖 Lexikon: Werke ansehen (ohne Kamera)</button>
         </div>
         <div id="bereich-ar" style="display:none">
-            <a class="ov-zurueck" style="cursor:pointer;max-width:200px;padding:8px 14px;font-size:13px;margin:0 auto 4px" onclick="menuBereich('start')">← Zurück</a>
+            <button type="button" class="ov-zurueck" style="max-width:200px;padding:8px 14px;font-size:13px;margin:0 auto 4px" onclick="menuBereich('start')">← Zurück</button>
             <a class="btn btn-start" href="index_v2.html?modus=kamera" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">📱 Scannen mit der Kamera</a>
             <a class="btn ov-zurueck" href="index_v2.html?modus=galerie" style="margin-top:12px">🖼 Galerie-Modus (Monitor zeigt die Werke)</a>
             <a class="btn ov-zurueck" href="index_v2.html?modus=kamera&tour=1" style="margin-top:12px">🚶 Geführte Tour (Experiment-Rundgang, 7 Stationen)</a>
@@ -405,7 +430,7 @@
         </div>
         </div>
         <div id="werk-liste" style="display:none">
-            <a class="ov-zurueck" style="cursor:pointer;max-width:200px;padding:8px 14px;font-size:13px;margin:0 auto 4px" onclick="menuBereich('start')">← Zurück</a>
+            <button type="button" class="ov-zurueck" style="max-width:200px;padding:8px 14px;font-size:13px;margin:0 auto 4px" onclick="menuBereich('start')">← Zurück</button>
         </div>
     </div></div>
 
@@ -429,7 +454,7 @@
             Die Geschichte, alle Fakten und der Chat mit dem Werk sind aber schon da!</div>
 
         <button class="btn btn-start" id="btn-start" onclick="startApp()" disabled>Wird vorbereitet …</button>
-        <!-- Lese-Knopf am 19.07.2026 entfernt: redundant, der Demo-Modus zeigt Fakten/Chat ueber den Info-Knopf (Funktion nurLesen bleibt im Code) -->
+        <!-- Der fruehere Leseknopf ist entfallen. Demo, Fakten und Chat nutzen die drei grossen Werkaktionen. -->
         <button class="btn btn-cheat" onclick="forceTracking()">⚠️ Demo-Modus (ohne Marker)</button>
         <a class="ov-zurueck" href="index_v2.html">← Zurück zur Werkübersicht</a>
     </div>
@@ -446,8 +471,7 @@
         <div id="galerie-schild"><b id="galerie-titel"></b><span id="galerie-untertitel"></span></div>
     </div>
 
-    <!-- Fakten: Button und Panel -->
-    <button id="fakten-btn" onclick="panelToggle(true)" aria-label="Fakten anzeigen">ℹ</button>
+    <!-- Informationen und Chat werden ueber die drei grossen Werk-Aktionen geoeffnet. -->
     <div id="fakten-panel">
         <div class="griff"></div>
         <button id="panel-schliessen" onclick="panelToggle(false)" aria-label="Schließen">✕</button>
@@ -532,9 +556,23 @@
         <div id="tour-punkte"></div>
     </div>
 
-    <button id="geschichte-btn" onclick="geschichteAbspielen()">▶ Meine Geschichte hören</button>
+    <div id="ansicht-wahl" role="dialog" aria-modal="true" aria-labelledby="wahl-titel">
+        <div class="wahl-karte">
+            <h2 id="wahl-titel">✅ Werk erkannt</h2>
+            <p id="wahl-text">Wie möchtest du das Werk erleben?</p>
+            <div class="wahl-knoepfe">
+                <button type="button" class="wahl-knopf" id="wahl-bequem" onclick="ansichtWaehlen('bequem')">🖐 Handy senken und bequem ansehen</button>
+                <button type="button" class="wahl-knopf" id="wahl-ar" onclick="ansichtWaehlen('ar')">📷 Kamera weiter auf das Bild halten</button>
+            </div>
+        </div>
+    </div>
+    <button type="button" id="zur-kamera-btn" onclick="zurKamera()">📷 Zurück zur Kamera</button>
+    <nav id="werk-aktionen" aria-label="Funktionen des erkannten Werkes">
+        <button type="button" id="geschichte-btn" class="werk-aktion hauptaktion" onclick="geschichteAktion()"><span class="aktion-icon">▶</span><span>Geschichte</span></button>
+        <button type="button" id="chat-btn" class="werk-aktion" onclick="inhaltOeffnen('chat')"><span class="aktion-icon">💬</span><span>Fragen</span></button>
+        <button type="button" id="fakten-btn" class="werk-aktion" onclick="inhaltOeffnen('info')"><span class="aktion-icon">📖</span><span>Mehr wissen</span></button>
+    </nav>
     <div id="freihand-layer"></div>
-    <button id="freihand-btn" onclick="freihandToggle()" title="Einmal erkannt, dann frei bewegen: Freihand zeigt das Werk auf seiner Buehne weiter"><span id="fh-live" class="an">📷 Live</span><span id="fh-frei">🖐️ Freihand</span></button>
 
     <div id="toast"></div>
 
@@ -642,6 +680,18 @@
     // erst mal nur still vor sich hin. Die vertonte Geschichte startet auf
     // Knopfdruck und kehrt am Ende von selbst in den Loop zurueck.
     const geschichteBtn = document.getElementById("geschichte-btn");
+    const faktenBtn = document.getElementById("fakten-btn");
+    const werkAktionen = document.getElementById("werk-aktionen");
+    const ansichtWahl = document.getElementById("ansicht-wahl");
+    const zurKameraBtn = document.getElementById("zur-kamera-btn");
+    let ansichtModus = "unentschieden";
+    let ansichtWerkId = null;
+
+    function geschichteBeschriften(spielt) {
+        geschichteBtn.innerHTML = spielt
+            ? '<span class="aktion-icon">⏹</span><span>Beenden</span>'
+            : '<span class="aktion-icon">▶</span><span>Geschichte</span>';
+    }
 
     function idleZeigen(w) {
         videoModus = "idle";
@@ -655,7 +705,7 @@
             });
             if (istOverlayVideo(arVideoEl)) arVideoEl.setAttribute("visible", "false");
         });
-        geschichteBtn.textContent = "▶ Meine Geschichte hören";
+        geschichteBeschriften(false);
     }
 
     function geschichteZeigen(w) {
@@ -667,7 +717,7 @@
             video.load();                 // Neustart ohne Seek: laeuft auch auf Servern ohne Range-Support
         }
         video.play().catch(() => {});
-        geschichteBtn.textContent = "⏹ Geschichte beenden";
+        geschichteBeschriften(true);
     }
 
     window.geschichteAbspielen = function() {
@@ -675,6 +725,17 @@
         if (videoModus === "geschichte") { idleZeigen(videoWerk); return; }
         sprechStopp();                    // nichts spricht doppelt
         geschichteZeigen(videoWerk);
+        tourAktion("geschichte");
+    };
+
+    window.geschichteAktion = function() {
+        if (videoWerk && !videoWerk.inProduktion) {
+            window.geschichteAbspielen();
+            return;
+        }
+        window.inhaltOeffnen("info");
+        if (window.vorlesenGeschichte) window.vorlesenGeschichte();
+        tourAktion("geschichte");
     };
 
     video.addEventListener("ended", () => {
@@ -682,7 +743,6 @@
             idleZeigen(videoWerk);
     });
     const cheatVideo  = document.getElementById("cheat-video");
-    const faktenBtn   = document.getElementById("fakten-btn");
 
     function status(text, farbe) {
         statusText.textContent = text;
@@ -704,12 +764,34 @@
 
     // --- 2. STARTSEITE (ohne Parameter): Kamera-Modus oder Lexikon ---
     if (!werk && !kameraModus) {
-        document.getElementById("werk-menu").style.display = "block";
+        const werkMenu = document.getElementById("werk-menu");
+        werkMenu.style.display = "block";
         window.menuBereich = function(was) {
             document.getElementById("menu-stufe1").style.display = (was === "start") ? "block" : "none";
             document.getElementById("bereich-ar").style.display = (was === "ar") ? "block" : "none";
             document.getElementById("werk-liste").style.display = (was === "lexikon") ? "block" : "none";
+            requestAnimationFrame(() => {
+                const bereich = was === "ar" ? document.getElementById("bereich-ar")
+                    : (was === "lexikon" ? document.getElementById("werk-liste") : document.getElementById("menu-stufe1"));
+                const ziel = bereich && bereich.querySelector("button, a[href], summary");
+                if (ziel) { ziel.focus(); ziel.scrollIntoView({ block:"nearest" }); }
+            });
         };
+        // Fire TV/Silk hat keine Wischgeste. Der Fokus der Fernbedienung muss
+        // deshalb ein Element nicht nur auswaehlen, sondern auch sichtbar scrollen.
+        werkMenu.addEventListener("focusin", e => {
+            if (e.target !== werkMenu && e.target.scrollIntoView)
+                e.target.scrollIntoView({ block:"nearest", behavior:"smooth" });
+        });
+        werkMenu.addEventListener("keydown", e => {
+            if (e.target !== werkMenu) return;
+            if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); werkMenu.scrollBy({ top:180, behavior:"smooth" }); }
+            if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); werkMenu.scrollBy({ top:-180, behavior:"smooth" }); }
+        });
+        requestAnimationFrame(() => {
+            const erster = document.querySelector("#menu-stufe1 button");
+            if (erster) erster.focus(); else werkMenu.focus();
+        });
         const liste = document.getElementById("werk-liste");
         // (Kamera-Kachel entfernt 19.07.2026: der grosse "Scannen"-Knopf oben uebernimmt das)
         const trenner = document.createElement("p");
@@ -749,14 +831,126 @@
         document.getElementById("chat-eingabe").style.display = "flex";
     }
 
+    function werkAktionenZeigen() {
+        werkAktionen.style.display = "grid";
+        faktenBtn.style.display = "flex";
+        geschichteBtn.style.display = "flex";
+    }
+
+    function ansichtAuswahlZeigen(w, markerVerloren) {
+        ansichtWerkId = w.id;
+        ansichtModus = "unentschieden";
+        werkAktionen.style.display = "none";
+        document.getElementById("wahl-titel").textContent = markerVerloren ? "Bild nicht mehr in der Kamera" : "✅ Werk erkannt";
+        document.getElementById("wahl-text").textContent = markerVerloren
+            ? "Du kannst das Bild erneut suchen oder das erkannte Werk bequem weiter ansehen."
+            : "Wie möchtest du das Werk erleben?";
+        document.getElementById("wahl-ar").textContent = markerVerloren
+            ? "📷 Bild erneut mit der Kamera suchen"
+            : "📷 Kamera weiter auf das Bild halten";
+        if (tourAktiv) document.getElementById("tour-karte").style.display = "none";
+        ansichtWahl.style.display = "flex";
+        requestAnimationFrame(() => document.getElementById("wahl-bequem").focus());
+    }
+
+    window.ansichtWaehlen = function(modus) {
+        if (!aktuellesWerk) return;
+        ansichtWahl.style.display = "none";
+        ansichtModus = modus;
+        if (modus === "bequem") {
+            freihandSetzen(true);
+            if (videoWerk && video.paused) video.play().catch(() => {});
+            zurKameraBtn.style.display = brauchtKamera ? "block" : "none";
+            status("🖐 Bequeme Ansicht: " + aktuellesWerk.titel, "var(--akzent)");
+            tourAktion("bequem");
+        } else {
+            if (freihandModus) freihandSetzen(false);
+            zurKameraBtn.style.display = "none";
+            status("📷 Am Bild bleiben: " + aktuellesWerk.titel, "var(--ok)");
+            tourAktion("ansicht-ar");
+        }
+        werkAktionenZeigen();
+        if (tourAktiv) tourZeigen();
+        geschichteBtn.focus();
+    };
+
+    window.inhaltOeffnen = function(name) {
+        if (!aktuellesWerk) return;
+        // Laengere Texte und der Chat duerfen nie vom Tracking abhaengen. Beim
+        // Oeffnen wird das erkannte Werk festgehalten; das Handy darf sinken.
+        if (!freihandModus) { freihandSetzen(true); tourAktion("bequem"); }
+        ansichtModus = "bequem";
+        zurKameraBtn.style.display = brauchtKamera ? "block" : "none";
+        if (videoWerk && videoWerk.videoIdle && videoModus === "geschichte") idleZeigen(videoWerk);
+        window.tabWechsel(name);
+        window.panelToggle(true);
+        tourAktion(name);
+    };
+
+    window.zurKamera = function() {
+        window.panelToggle(false);
+        if (!brauchtKamera) { toast("Diese Ansicht wurde ohne Kamera gestartet.", 3000); return; }
+        freihandSetzen(false);
+        ansichtModus = "ar";
+        zurKameraBtn.style.display = "none";
+        status("📷 Kamera wieder auf " + (aktuellesWerk ? aktuellesWerk.titel : "das Bild") + " richten", "var(--warn)");
+        tourAktion("zur-kamera");
+    };
+
     // Kalibrier-Zustand (bezieht sich auf das aktuelle Werk)
     let K = { px:0, py:0, pz:0, rx:0, ry:0, rz:0, s:1 };
     let arVideoEl = null;
 
-    // Android nutzt den Canvas-Texturweg; ?textur=video erlaubt einen gezielten
-    // Vergleichstest, ohne das Standardverhalten anderer Geraete zu veraendern.
-    const ANDROID = /Android/i.test(navigator.userAgent);
-    const CANVAS_TEXTUR = ANDROID && params.get("textur") !== "video";
+    // Chromium auf Android benötigt den Canvas-Umweg gegen den Mali-Schwarzbalken.
+    // Firefox bekommt auf Android die direkte Textur, auf iOS den Canvas-Gegenversuch.
+    // Der Browsername ist nur ein Hinweis: besonders unter iOS laesst sich die
+    // wirkliche Engine nicht verlaesslich aus dem User-Agent bestimmen.
+    const UA = navigator.userAgent || "";
+    const IOS = /iPad|iPhone|iPod/i.test(UA) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const ANDROID = /Android/i.test(UA);
+    const FIREFOX_IOS = IOS && /(FxiOS|FocusiOS)/i.test(UA);
+    const FIREFOX_ANDROID = ANDROID && /(Firefox|Focus)/i.test(UA);
+    const SAMSUNG_ANDROID = ANDROID && /SamsungBrowser/i.test(UA);
+    const EDGE_IOS = IOS && /EdgiOS/i.test(UA);
+    const EDGE_ANDROID = ANDROID && /EdgA/i.test(UA);
+    const CHROME_IOS = IOS && /CriOS/i.test(UA);
+    const OPERA_IOS = IOS && /OPiOS/i.test(UA);
+    const OPERA_ANDROID = ANDROID && /(OPR|Opera)/i.test(UA);
+    const ANDROID_WEBVIEW = ANDROID && /\bwv\b/i.test(UA);
+    const SAFARI = /Safari/i.test(UA) &&
+        !/(Chrome|Chromium|CriOS|Edg|OPR|OPiOS|Firefox|FxiOS|SamsungBrowser)/i.test(UA);
+    const CHROMIUM_ANDROID = ANDROID && !FIREFOX_ANDROID &&
+        /(Chrome|Chromium|EdgA|SamsungBrowser|OPR|Opera)/i.test(UA);
+
+    let browserName = "Unbekannt";
+    if (FIREFOX_IOS || FIREFOX_ANDROID) browserName = "Firefox";
+    else if (SAMSUNG_ANDROID) browserName = "Samsung Internet";
+    else if (EDGE_IOS || EDGE_ANDROID) browserName = "Microsoft Edge";
+    else if (ANDROID_WEBVIEW) browserName = "Android WebView";
+    else if (OPERA_IOS || OPERA_ANDROID) browserName = "Opera";
+    else if (CHROME_IOS || (ANDROID && /Chrome/i.test(UA))) browserName = "Google Chrome";
+    else if (SAFARI) browserName = "Safari";
+    const systemName = IOS ? "iOS/iPadOS" : (ANDROID ? "Android" : "Desktop/sonstiges");
+    const engineHinweis = FIREFOX_ANDROID ? "Gecko" :
+        (CHROMIUM_ANDROID ? "Blink/Chromium" : (IOS ? "iOS-Engine nicht sicher ableitbar" : "unbekannt"));
+    // Auf Android umgeht CanvasTexture die bekannten bewegungsabhaengigen
+    // schwarzen VideoTexture-Flaechen sowohl in Blink als auch in Gecko.
+    // Firefox auf iOS bekommt denselben Sicherheitsweg; per URL bleibt A/B-Test moeglich.
+    const CANVAS_TEXTUR = params.get("textur") === "canvas" ||
+        (params.get("textur") !== "video" && (ANDROID || FIREFOX_IOS));
+    const BROWSER_PROFIL = {
+        system: systemName,
+        browser: browserName,
+        engineHinweis: engineHinweis,
+        ipadDesktopKennung: IOS && !/iPad|iPhone|iPod/i.test(UA),
+        androidWebView: ANDROID_WEBVIEW,
+        textur: CANVAS_TEXTUR ? "CanvasTexture" : "direkte VideoTexture",
+        override: params.get("textur") || "automatisch",
+        getUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+        requestVideoFrameCallback: "requestVideoFrameCallback" in HTMLVideoElement.prototype
+    };
+    console.info("[KOMPATIBILITAET]", BROWSER_PROFIL, UA);
     const cvTex = document.getElementById("cv-tex");
     // Kein `desynchronized`: Auf Android/Mali darf der WebGL-Upload nicht auf
     // einen Canvas zugreifen, waehrend dessen neuer Videoframe noch geschrieben wird.
@@ -930,10 +1124,23 @@
         } else {
             check("chk-geraet", "ok", "Gerät geeignet (HTTPS, WebGL, online)");
         }
-        fetch(werk.marker + ".fset", { method: "HEAD" }).then(r => {
+        // Safari lässt HEAD-Anfragen auf statischen Hosts gelegentlich offen.
+        // Die .fset-Datei ist klein; ein normaler GET prüft sie zuverlässiger.
+        const markerAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const markerTimer = markerAbort ? setTimeout(() => markerAbort.abort(), 8000) : null;
+        fetch(werk.marker + ".fset", {
+            method: "GET", cache: "no-store",
+            signal: markerAbort ? markerAbort.signal : undefined
+        }).then(r => {
+            if (markerTimer) clearTimeout(markerTimer);
             if (r.ok) check("chk-marker", "ok", "Bild-Marker gefunden");
             else check("chk-marker", "fehler", "Bild-Marker nicht gefunden (Fehler " + r.status + "), Pfad in werke.js prüfen");
-        }).catch(() => check("chk-marker", "fehler", "Marker nicht erreichbar, Verbindung prüfen"));
+        }).catch(err => {
+            if (markerTimer) clearTimeout(markerTimer);
+            check("chk-marker", "fehler", err && err.name === "AbortError"
+                ? "Marker-Prüfung dauert zu lange. Der Start ist trotzdem möglich."
+                : "Marker nicht erreichbar, Verbindung prüfen");
+        });
         fetch(werk.video, { method: "HEAD" }).then(r => {
             if (!r.ok) { check("chk-verbindung", "fehler", "Video nicht gefunden (Fehler " + r.status + ")"); return; }
             check("chk-verbindung", "ok", "Server erreichbar");
@@ -986,7 +1193,7 @@
         let el = null;
         if (!w.inProduktion && videoAsset) {
             if (CANVAS_TEXTUR) {
-                // Nur expliziter Diagnosemodus; nicht mehr automatisch auf Android.
+                // Browserabhängiger Canvas-Umweg; per ?textur=canvas ebenfalls testbar.
                 el = document.createElement("a-plane");
                 el.setAttribute("material", "src: #cv-tex; shader: flat; side: double; depthTest: false; depthWrite: false");
                 el.dataset.cvtex = "1";
@@ -1025,8 +1232,10 @@
         nft.setAttribute("smoothThreshold", "5");
         const overlay = overlayBauen(nft, w, videoAsset);
         szene.appendChild(nft);
+        let markerVerlustTimer = null;
 
         nft.addEventListener("markerFound", () => {
+            clearTimeout(markerVerlustTimer);
             console.log("[AR] markerFound", {
                 id: w.id, titel: w.titel, marker: w.marker,
                 video: w.videoIdle || w.video,
@@ -1035,9 +1244,21 @@
                 canvasSize: cvTex.width + "x" + cvTex.height,
                 canvasTextur: CANVAS_TEXTUR
             });
+            const tourZiel = tourAktiv && tourIndex >= 0 ? tourWerk() : null;
+            if (tourZiel && tourZiel.id !== w.id) {
+                if (overlay) overlay.setAttribute("visible", "false");
+                status("🔍 Bitte " + tourZiel.titel + " suchen", "var(--warn)");
+                toast("Das ist ein anderes Werk. In dieser Station wird " + tourZiel.titel + " gesucht.", 3500);
+                return;
+            }
             status("✅ " + w.titel + " erkannt", "var(--ok)");
             statusBar.style.backgroundColor = "rgba(0,40,15,0.85)";
-            if (aktuellesWerk !== w) fuellePanel(w);
+            const neuesWerk = aktuellesWerk !== w;
+            if (neuesWerk) {
+                window.panelToggle(false);
+                if (freihandModus) freihandSetzen(false);
+                fuellePanel(w);
+            }
             arVideoEl = overlay;
             // Im Kamera-Modus wechselt die gemeinsame Videoquelle erst nach dem
             // Treffer. Bis das neue Werk wirklich `playing` meldet, bleibt genau
@@ -1045,21 +1266,28 @@
             if (istOverlayVideo(overlay)) overlay.setAttribute("visible", "false");
             kalLaden(w);
             tourMarkerGefunden(w);
-            freihandBtn.style.display = "block";
             if (!w.inProduktion && videoAsset) {
                 videoWerk = w;
-                if (w.videoIdle) { idleZeigen(w); geschichteBtn.style.display = "block"; }
+                if (w.videoIdle) idleZeigen(w);
                 else { video.muted = false; video.play(); }
             }
-            else toast("🖼 " + w.titel + ": Standbild-Modus: Geschichte, Fakten und Chat über den ℹ-Knopf (Browserstimme, bis die Tonspuren da sind).", 3500);
+            else toast("🖼 " + w.titel + ": Geschichte, Fragen und Fakten sind über die drei großen Knöpfe erreichbar.", 3500);
+            if (neuesWerk || ansichtWerkId !== w.id) ansichtAuswahlZeigen(w, false);
+            else if (ansichtModus !== "unentschieden") werkAktionenZeigen();
         });
         nft.addEventListener("markerLost", () => {
             console.log("[AR] markerLost", { id: w.id, titel: w.titel });
-            if (freihandModus) return; // Freihand: Wiedergabe laeuft ohne Tracking weiter
-            status(kameraModus ? "📷 Suche Werke …" : "🔍 Suche " + w.titel + " …", "var(--fehler)");
-            statusBar.style.backgroundColor = "rgba(8,12,16,0.82)";
-            video.pause();
-            geschichteBtn.style.display = "none";
+            if (freihandModus || document.getElementById("fakten-panel").classList.contains("offen")) return;
+            // Kurze Tracking-Aussetzer werden ignoriert. Erst wenn das Bild wirklich
+            // weg ist, erhaelt die Person eine verstaendliche Wahl statt eines Stopps.
+            clearTimeout(markerVerlustTimer);
+            markerVerlustTimer = setTimeout(() => {
+                if (aktuellesWerk !== w || freihandModus) return;
+                status(kameraModus ? "📷 Bild erneut suchen" : "🔍 Suche " + w.titel + " …", "var(--fehler)");
+                statusBar.style.backgroundColor = "rgba(8,12,16,0.82)";
+                video.pause();
+                ansichtAuswahlZeigen(w, true);
+            }, 1600);
         });
         return nft;
     }
@@ -1116,36 +1344,39 @@
         // Nur Werke anlegen, deren Marker-Dateien wirklich existieren - alles andere
         // wird gar nicht erst geladen (kein Rechenaufwand, keine Konsolen-Fehler).
         // Sobald neue Marker in assets/markers/ liegen, ist das Werk automatisch dabei.
-        const bauen = () => teilnehmer.forEach(w => {
-            fetch(w.marker + ".fset", { method: "HEAD" })
-                .then(r => {
-                    if (r.ok) nftAnlegen(w, w.inProduktion ? null : "ki-video");
-                    else console.log("Kamera-Modus: Marker fehlt fuer " + w.id + " - Werk vorerst nicht geladen.");
-                })
-                .catch(() => console.log("Kamera-Modus: Marker nicht erreichbar fuer " + w.id + "."));
+        // Safari/WebKit kann beim parallelen Initialisieren mehrerer NFT-Datensätze
+        // hängen bleiben. Deshalb immer nur einen Marker laden und erst nach dessen
+        // arjs-nft-loaded-Ereignis den nächsten anlegen.
+        let markerBereit = 0;
+        let markerLadeIndex = 0;
+        const naechstenMarkerLaden = () => {
+            if (markerLadeIndex >= teilnehmer.length) return;
+            const w = teilnehmer[markerLadeIndex++];
+            console.log("[AR] lade Marker " + markerLadeIndex + "/" + teilnehmer.length, w.id);
+            nftAnlegen(w, w.inProduktion ? null : "ki-video");
+        };
+        window.addEventListener("arjs-nft-loaded", () => {
+            markerBereit++;
+            if (markerBereit < teilnehmer.length) {
+                toast("Marker werden geladen: " + markerBereit + " von " + teilnehmer.length + " bereit …", 3000);
+                setTimeout(naechstenMarkerLaden, 100);
+            } else {
+                toast("✅ Alle " + markerBereit + " Marker bereit - jetzt aufs Werk halten!", 5000);
+            }
         });
-        if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen);
+        const bauen = () => naechstenMarkerLaden();
+        if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen, { once:true });
         if (teilnehmer.length > 3)
             console.log("Hinweis: " + teilnehmer.length + " Marker aktiv - auf aelteren Geraeten ggf. reduzieren.");
         // Sichtbare Bereitschafts-Anzeige: jeder NFT-Worker meldet "arjs-nft-loaded",
         // wenn sein Marker fertig geparst ist. Erst dann kann erkannt werden;
         // auf Handys dauert das bei 7 Markern gern 10 bis 30 Sekunden.
-        let markerBereit = 0;
-        window.addEventListener("arjs-nft-loaded", () => {
-            markerBereit++;
-            if (markerBereit < teilnehmer.length) {
-                toast("Marker werden geladen: " + markerBereit + " von " + teilnehmer.length + " bereit …", 3000);
-            } else {
-                toast("✅ Alle " + markerBereit + " Marker bereit - jetzt aufs Werk halten!", 5000);
-            }
-        });
     }
 
     // --- 6. START / LESEMODUS / NOTFALL-DEMO ---
     window.startApp = function() {
         document.getElementById("home-btn").style.display = "flex";
         startOverlay.style.display = "none";
-        faktenBtn.style.display = "flex";
         video.muted = true;
         video.play().then(() => { video.pause(); video.currentTime = 0; })
                     .catch(() => console.log("Audio-Init ok"));
@@ -1162,16 +1393,17 @@
     window.nurLesen = function() {
         document.getElementById("home-btn").style.display = "flex";
         startOverlay.style.display = "none";
-        faktenBtn.style.display = "flex";
         status("📖 LESEMODUS", "var(--akzent)");
         if (!aktuellesWerk && WERKE.length) fuellePanel(werk || WERKE[0]);
-        panelToggle(true);
+        freihandSetzen(true);
+        ansichtModus = "bequem";
+        werkAktionenZeigen();
+        window.inhaltOeffnen("info");
     };
 
     // FREIHAND-MODUS: einmal scannen, danach mit gesenktem Arm weiter.
     // Entstanden aus dem Pretest-Befund "Arm tut weh beim Draufhalten" (Kap. 4.3.2).
     let freihandModus = false;
-    const freihandBtn = document.getElementById("freihand-btn");
     const freihandLayer = document.getElementById("freihand-layer");
     // Passgenaue Lage des Videos auf der Outpainting-Buehne:
     // Konvention aller Freihand-Hintergruende: 1080x2340 px, Originaldigitalisat exakt mittig bei 85 % Breite.
@@ -1299,8 +1531,9 @@
     window.addEventListener("resize", freihandLayout);
     window.addEventListener("orientationchange", freihandLayout);
     let videoElternteil = null; // urspruenglicher DOM-Platz des ki-video (a-assets)
-    window.freihandToggle = function() {
-        freihandModus = !freihandModus;
+    function freihandSetzen(an) {
+        if (freihandModus === an) { if (an) freihandLayout(); return; }
+        freihandModus = an;
         if (freihandModus) {
             const w = aktuellesWerk || videoWerk;
             // Werkspezifischer Hintergrund; fehlt die Datei, bleibt der dunkle Grundton.
@@ -1334,34 +1567,33 @@
             freihandLayer.appendChild(video);   // Video als HTML-Element in den Layer (Wiedergabe laeuft weiter)
             freihandLayer.style.display = "block";
             freihandLayoutReset(); freihandLayout();
-            document.getElementById("fh-frei").classList.add("an");
-            document.getElementById("fh-live").classList.remove("an");
             const name = (aktuellesWerk || videoWerk) ? (aktuellesWerk || videoWerk).titel : "Werk";
-            status("🖐️ FREIHAND: " + name, "var(--akzent)");
-            if (!galerieModus) toast("Freihand-Modus: Du kannst das Handy jetzt bequem halten oder herumlaufen; Video, Geschichte und Chat laufen weiter.", 4500);
-            if (videoWerk && videoWerk.videoIdle && videoModus === "idle") geschichteBtn.style.display = "block";
+            status("🖐 Bequeme Ansicht: " + name, "var(--akzent)");
+            if (!galerieModus) toast("Du kannst das Handy jetzt senken. Das erkannte Werk bleibt geöffnet.", 3500);
         } else {
             freihandLayer.style.display = "none";
             if (videoElternteil) videoElternteil.appendChild(video); // zurueck in a-assets
             freihandLayoutReset();
-            document.getElementById("fh-frei").classList.remove("an");
-            document.getElementById("fh-live").classList.add("an");
             status(kameraModus ? "📷 Suche Werke …" : "🔍 Suche Bild …", "var(--warn)");
         }
-    };
+    }
+    // Rueckwaertskompatibel fuer alte Links/Tests; sichtbar gibt es keinen Slider mehr.
+    window.freihandToggle = function() { freihandSetzen(!freihandModus); };
 
     window.forceTracking = function() {
         document.getElementById("home-btn").style.display = "flex";
         startOverlay.style.display = "none";
-        faktenBtn.style.display = "flex";
         status("⚠️ DEMO-MODUS", "var(--warn)");
         cheatVideo.setAttribute("visible", "true");
-        if (videoWerk && videoWerk.videoIdle) { idleZeigen(videoWerk); geschichteBtn.style.display = "block"; }
+        if (videoWerk && videoWerk.videoIdle) idleZeigen(videoWerk);
         else { video.muted = false; video.play(); }
         // Ohne Kamera braucht niemand das leere Kamerabild: Buehne (erweiterter
         // Hintergrund) anzeigen; Idle-Video falls geladen, sonst das zentrierte Werkbild.
-        if (!freihandModus) freihandToggle();
-        freihandBtn.style.display = "none";   // ohne Kamera gibt es kein "Zurueck zum Live-Bild"
+        freihandSetzen(true);
+        ansichtModus = "bequem";
+        ansichtWerkId = (aktuellesWerk || videoWerk) ? (aktuellesWerk || videoWerk).id : null;
+        werkAktionenZeigen();
+        zurKameraBtn.style.display = "none";   // ohne Kamera gibt es kein "Zurueck zur Kamera"
     };
 
     // --- GALERIE-MODUS: normales Werkbild gerahmt an einer neutralen Galeriewand ---
@@ -1380,7 +1612,9 @@
         document.getElementById("galerie-untertitel").textContent = w.untertitel || "";
         document.getElementById("galerie-raum").style.display = "flex";
         freihandLayer.style.display = "none";
-        freihandBtn.style.display = "none";
+        werkAktionen.style.display = "none";
+        ansichtWahl.style.display = "none";
+        zurKameraBtn.style.display = "none";
         status("🖼 " + w.titel + "  ·  " + (galerieIndex+1) + "/" + galerieWerke.length, "var(--akzent)");
     };
     if (galerieModus) {
@@ -1407,7 +1641,9 @@
     // --- 7. FAKTEN-PANEL + TABS ---
     window.panelToggle = function(offen) {
         if (!offen) sprechStopp();
-        document.getElementById("fakten-panel").classList.toggle("offen", offen);
+        const panel = document.getElementById("fakten-panel");
+        panel.classList.toggle("offen", offen);
+        if (offen) requestAnimationFrame(() => document.getElementById("panel-schliessen").focus());
     };
     window.tabWechsel = function(name) {
         document.getElementById("tab-info").classList.toggle("aktiv", name === "info");
@@ -1453,6 +1689,7 @@
                     || (window.speechSynthesis && speechSynthesis.speaking);
         sprechStopp();
         if (spielt) return;
+        tourAktion("vorlesen");
         if (w.audio) {
             chatAudio = new Audio(w.audio);
             chatAudio.volume = LAUTSTAERKE;
@@ -1502,6 +1739,11 @@
             "GERAETE-INFO (" + new Date().toLocaleString("de-DE") + ")",
             "Werk: " + (aktuellesWerk ? aktuellesWerk.id : (videoWerk ? videoWerk.id : "-")),
             "Modus: " + (kameraModus ? "Kamera" : (galerieModus ? "Galerie" : (demoDirekt ? "Demo" : "Einzelwerk"))),
+            "Erkanntes Profil: " + BROWSER_PROFIL.system + " / " + BROWSER_PROFIL.browser,
+            "Engine-Hinweis: " + BROWSER_PROFIL.engineHinweis,
+            "Video-Texturpfad: " + BROWSER_PROFIL.textur + " (Auswahl: " + BROWSER_PROFIL.override + ")",
+            "Kamera-API: " + (BROWSER_PROFIL.getUserMedia ? "vorhanden" : "fehlt"),
+            "VideoFrameCallback: " + (BROWSER_PROFIL.requestVideoFrameCallback ? "vorhanden" : "fehlt"),
             "Browser/Geraet (User-Agent): " + navigator.userAgent,
             "Bildschirm: " + screen.width + "x" + screen.height + " @ " + window.devicePixelRatio + "x",
             "WebGL: " + webgl,
@@ -1605,13 +1847,13 @@
         { m: /wer bist du|was bist du|stell dich (mal )?vor/,
           a: () => "Ich bin " + (aktuellesWerk ? aktuellesWerk.titel : "ein Werk aus Brandenburg an der Havel") + ". Was ich erlebt habe, erzähle ich dir gern; frag einfach los." },
         { m: /bist du (echt|real|eine? (ki|ai)|ein (roboter|bot|computer))|kuenstliche intelligenz/,
-          a: () => "Gute Frage! Meine Antworten haben Menschen geschrieben und gegen die Archive geprüft; nur meine Filme wurden mit KI erzeugt. Was belegt und was erzählt ist, steht im Bereich „Wahr oder erzählt?“ im Info-Panel." },
+          a: () => "Gute Frage! Meine Antworten haben Menschen geschrieben und gegen die Archive geprüft. Nur meine Filme wurden mit KI erzeugt. Was belegt und was erzählt ist, findest du unter Mehr wissen im Bereich „Wahr oder erzählt?“." },
         { m: /erzaehl (mir )?(einen |nen )?witz|sag was lustiges/,
           a: () => "Mein bester Witz steckt in meinem kurzen Film; schau ihn dir ruhig noch einmal an. Für Kalauer bin ich ehrlich gesagt zu alt." },
         { m: /\b(haha+|lol|xd)\b|😂|🤣/,
           a: () => "Freut mich! Humor hält jung; das sage ich mit einiger Autorität." },
         { m: /was kannst du|hilfe\b|wie funktioniert (das|der chat)/,
-          a: () => "Du kannst mich alles über meine Geschichte fragen; die Knöpfe unter dem Eingabefeld sind gute Startpunkte. Im Info-Panel findest du außerdem Fakten, Quellen und den Vorlesen-Knopf." },
+          a: () => "Du kannst mich alles über meine Geschichte fragen. Die Knöpfe unter dem Eingabefeld sind gute Startpunkte. Unter Mehr wissen findest du außerdem Fakten, Quellen und die Vorlesefunktion." },
     ];
     function smalltalkAntwort(text) {
         const f = normalisieren(text);
@@ -1621,6 +1863,7 @@
     }
 
     function chatFrage(text) {
+        tourAktion("chatfrage");
         sprechStopp();   // nichts darf sich ueberlappen
         blase(text, "ich");
         const tippt = blase("", "werk");
@@ -1708,16 +1951,30 @@
     // Reihenfolge und Aufgaben sind fest, damit jede Testperson dasselbe erlebt (Kap. 6).
     // (tourAktiv wird oben bei den URL-Parametern deklariert - stand frueher hier und warf im Kamera-Modus einen TDZ-ReferenceError)
     const TOUR = [
-        { id:"loriot",     aufgabe:"Richte die Kamera auf das Waldmops-Bild und schau den kurzen Film. Tippe danach auf 💬 und probiere eine der Vorschlagsfragen." },
-        { id:"mona",       aufgabe:"Finde die Mona Lisa und schau ihren Kurzfilm bis zur Pointe." },
-        { id:"roland",     aufgabe:"Richte die Kamera auf den Roland und beweg das Handy langsam hin und her: bleibt das Video auf dem Bild sitzen?" },
-        { id:"fontane",    aufgabe:"Öffne bei der Weinhandlung das Info-Panel und starte kurz den Vorlesen-Knopf; du kannst jederzeit stoppen." },
-        { id:"wackelauto", aufgabe:"Tippe oben rechts auf 🖐️ Freihand und schau das Wackelauto mit bequem gesenktem Arm an." },
-        { id:"knitter",    aufgabe:"Schau den beiden Knitter-Damen kurz zu: Wirkt ihr Gespräch natürlich?" },
-        { id:"bielefeld",  aufgabe:"Zum Abschluss: Hör kurz ins Live-Interview mit Marie Bielefeld rein; Reporter und Marie sind zwei Stimmen." },
+        { id:"loriot", schritte:["ansicht-ar","geschichte"],
+          aufgabe:"Wähle ‚Kamera weiter auf das Bild halten‘ und starte danach die Geschichte." },
+        { id:"mona", schritte:["bequem","geschichte"],
+          aufgabe:"Wähle ‚Handy senken‘ und starte die Geschichte in der bequemen Ansicht." },
+        { id:"roland", schritte:["ansicht-ar","beobachtet"],
+          aufgabe:"Bleib in der Kameraansicht und bewege das Handy langsam. Prüfe, ob der Film auf dem Bild sitzen bleibt." },
+        { id:"fontane", schritte:["info","vorlesen"],
+          aufgabe:"Öffne ‚Mehr wissen‘ und starte dort einmal die Vorlesefunktion." },
+        { id:"wackelauto", schritte:["bequem","zur-kamera"],
+          aufgabe:"Senk das Handy in der bequemen Ansicht und kehre danach mit ‚Zurück zur Kamera‘ zurück." },
+        { id:"knitter", schritte:["chat","chatfrage"],
+          aufgabe:"Öffne ‚Fragen‘ und wähle eine der vorgeschlagenen Fragen aus." },
+        { id:"bielefeld", schritte:["geschichte"],
+          aufgabe:"Starte zum Abschluss die Geschichte und hör kurz in das Interview hinein." },
     ];
     let tourIndex = -1;
     let tourGefunden = false;
+    let tourErledigt = new Set();
+
+    const TOUR_AKTION_TEXT = {
+        "ansicht-ar":"Kameraansicht wählen", bequem:"Handy senken", geschichte:"Geschichte starten",
+        beobachtet:"Beobachtung bestätigen", info:"Mehr wissen öffnen", vorlesen:"Vorlesen starten",
+        "zur-kamera":"Zur Kamera zurückkehren", chat:"Fragen öffnen", chatfrage:"Eine Frage auswählen"
+    };
 
     function tourWerk() { return tourIndex >= 0 && tourIndex < TOUR.length ? WERKE.find(w => w.id === TOUR[tourIndex].id) : null; }
 
@@ -1736,6 +1993,7 @@
                 "Es gibt kein Richtig oder Falsch; uns interessiert, wie DU das Erlebnis findest. Sag gern laut, was dir auffällt.";
             document.getElementById("tour-status").textContent = "";
             document.getElementById("tour-weiter").textContent = "Los geht's →";
+            document.getElementById("tour-weiter").disabled = false;
         } else if (tourIndex >= TOUR.length) {
             document.getElementById("tour-schritt").textContent = "Geschafft!";
             document.getElementById("tour-titel").textContent = "Vielen Dank! 🎉";
@@ -1743,25 +2001,53 @@
                 "Das war der Rundgang. Bitte gib das Gerät zurück, es folgt noch ein kurzer Fragebogen.";
             document.getElementById("tour-status").textContent = "";
             document.getElementById("tour-weiter").textContent = "Rundgang beenden";
+            document.getElementById("tour-weiter").disabled = false;
         } else {
             const w = tourWerk(); const t = TOUR[tourIndex];
             document.getElementById("tour-schritt").textContent = "Werk " + (tourIndex+1) + " von " + TOUR.length;
             document.getElementById("tour-titel").textContent = w ? w.titel : t.id;
             document.getElementById("tour-text").textContent = t.aufgabe;
-            document.getElementById("tour-status").textContent = tourGefunden ? "✅ Werk erkannt" : "🔍 Noch nicht erkannt; Kamera aufs Bild richten";
-            document.getElementById("tour-weiter").textContent = "Weiter →";
+            const offen = t.schritte.filter(s => !tourErledigt.has(s));
+            document.getElementById("tour-status").textContent = !tourGefunden
+                ? "🔍 Noch nicht erkannt; Kamera aufs Bild richten"
+                : (offen.length ? "Als Nächstes: " + TOUR_AKTION_TEXT[offen[0]] : "✅ Aufgabe vollständig ausprobiert");
+            document.getElementById("tour-weiter").textContent = !tourGefunden
+                ? "Erst Werk erkennen"
+                : (offen[0] === "beobachtet" ? "Beobachtung abgeschlossen ✓" : (offen.length ? "Bitte Funktion unten wählen" : "Weiter →"));
+            document.getElementById("tour-weiter").disabled = !tourGefunden || (offen.length > 0 && offen[0] !== "beobachtet");
         }
     }
 
     window.tourWeiter = function() {
         if (tourIndex >= TOUR.length) { document.getElementById("tour-karte").style.display = "none"; return; }
-        tourIndex++; tourGefunden = false; tourZeigen();
+        if (tourIndex < 0) { tourIndex = 0; tourGefunden = false; tourErledigt = new Set(); tourZeigen(); return; }
+        const t = TOUR[tourIndex];
+        if (!tourGefunden) { toast("Bitte zuerst das angezeigte Werk mit der Kamera erkennen.", 3500); return; }
+        const offen = t.schritte.filter(s => !tourErledigt.has(s));
+        if (offen[0] === "beobachtet") { tourErledigt.add("beobachtet"); tourZeigen(); return; }
+        if (offen.length) { toast("Noch offen: " + TOUR_AKTION_TEXT[offen[0]], 3500); return; }
+        window.panelToggle(false);
+        ansichtWahl.style.display = "none";
+        werkAktionen.style.display = "none";
+        zurKameraBtn.style.display = "none";
+        if (freihandModus && brauchtKamera) freihandSetzen(false);
+        video.pause();
+        tourIndex++; tourGefunden = false; tourErledigt = new Set(); tourZeigen();
     };
+
+    function tourAktion(aktion) {
+        if (!tourAktiv || !tourGefunden || tourIndex < 0 || tourIndex >= TOUR.length) return;
+        const t = TOUR[tourIndex];
+        if (!t.schritte.includes(aktion) || tourErledigt.has(aktion)) return;
+        tourErledigt.add(aktion);
+        tourZeigen();
+        if (t.schritte.every(s => tourErledigt.has(s))) toast("✅ Stationsaufgabe geschafft. Du kannst weitergehen.", 3000);
+    }
 
     function tourMarkerGefunden(w) {
         if (!tourAktiv) return;
         const ziel = tourWerk();
-        if (ziel && w.id === ziel.id && !tourGefunden) { tourGefunden = true; tourZeigen(); }
+        if (ziel && w.id === ziel.id && !tourGefunden) { tourGefunden = true; tourErledigt = new Set(); tourZeigen(); }
     }
 
     window.kalGeraetSpeichern = function() {
