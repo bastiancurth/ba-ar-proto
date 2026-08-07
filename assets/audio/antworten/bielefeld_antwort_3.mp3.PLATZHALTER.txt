@@ -1,9 +1,11 @@
-FEHLENDE DATEI: bielefeld_antwort_3.mp3
-Chat-Antwort 3 des Werks W7 (Ausgraeberin) - Stimme: Miriam Warm and Neutral (Marie), danach CapCut-Filter "Taschenradio" wie im Video.
+FEHLT NOCH: bielefeld_antwort_3.mp3
+============================================================
+Werk   : Die Ausgräberin vom Hasselberg
+Stimme : Reporter und Marie Bielefeld im Wechsel
+Frage  : Man nennt Sie berüchtigt. Wie kommt das?
 
-FRAGE (Reporter): Man nennt Sie berüchtigt. Wie kommt das?
-
-SPRECHTEXT (exakt so einsprechen; Audio-Tags in ENGLISCH ergaenzen, z. B. [confident] [dry] [pause]):
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
 Der Herr Pfarrer Holtze schrieb 1925 ins Vereinsbuch, die Tongefäße habe sich „die durch ihre Buddeleien berüchtigte Frau Oberpostsekretär Bielefeld geholt“. Ich nehme es als Kompliment.
 
-Ablage: assets/audio/antworten/bielefeld_antwort_3.mp3 (Abgabe-Kopie UND GitHub-Repo).
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/bielefeld_antwort_3.mp3 ablegen.

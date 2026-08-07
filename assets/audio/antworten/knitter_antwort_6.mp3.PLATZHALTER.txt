@@ -1,0 +1,11 @@
+FEHLT NOCH: knitter_antwort_6.mp3
+============================================================
+Werk   : Frauen auf einer Bank
+Stimme : die vier Frauen auf der Bank, tratschend, halblaut
+Frage  : Stört es euch, dass er euch heimlich gezeichnet hat?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Anfangs schon. Man sitzt hier, hält ein Schwätzchen, und der Herr hält die Nase in sein Papier und macht Striche. Gefragt hat er nie. Aber sehen Sie es einmal so: Die Leute vergleichen ihn mit dem Zille aus Berlin, weil er den kleinen Leuten aufs Maul und auf die Hüte geschaut hat. Ihn kennt heute kaum noch jemand. Uns aber hängen sie ins Stadtmuseum. Wer hat da nun den besseren Schnitt gemacht?
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/knitter_antwort_6.mp3 ablegen.

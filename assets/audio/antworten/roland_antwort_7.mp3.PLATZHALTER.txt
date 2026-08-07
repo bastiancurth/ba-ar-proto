@@ -1,0 +1,11 @@
+FEHLT NOCH: roland_antwort_7.mp3
+============================================================
+Werk   : Der Roland von Brandenburg
+Stimme : der Roland, tief, würdevoll, leicht genervt
+Frage  : Bist du der einzige Roland?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Keineswegs. In vielen Städten des Nordens steht einer von uns, immer dort, wo eine Stadt auf ihr Marktrecht und ihre Freiheit pochte. Ich stehe seit 1474 hier, fünf Meter fünfunddreißig, und man sagt mir nach, ich sei einer der schönsten von allen. Ich widerspreche dem nicht. Zusammenkommen tun wir freilich nie. Beweglichkeit ist nicht die Stärke unseres Standes.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/roland_antwort_7.mp3 ablegen.

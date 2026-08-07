@@ -1,12 +1,11 @@
-PLATZHALTER fuer: fontane_antwort_2.mp3
-Werk:  Plauer Straße um 1920
-Frage: War Fontane wirklich in diesem Laden?
-------------------------------------------------------------
-SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
-wie die Erzaehlung des Werks - Persona: Weinhaendler F. W. Wiesike):
+FEHLT NOCH: fontane_antwort_2.mp3
+============================================================
+Werk   : Plauer Straße um 1920
+Stimme : Weinhändler Wiesike, älterer Herr, gemütlich
+Frage  : War Fontane wirklich in diesem Laden?
 
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
 Ehrlich gesagt: Belegt ist das nicht. Verbürgt ist, dass er auf dem Kutschweg vom Bahnhof an meinem Laden vorbeifuhr und dass sein Rheinwein aus genau diesem Keller stammte. Die Szene im Laden ist eine erzählerische Verdichtung, das geben wir offen zu.
-------------------------------------------------------------
-Fertige MP3 unter genau diesem Namen hier ablegen, dann den
-Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
-Antwort automatisch mit der Browser-Stimme vor.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/fontane_antwort_2.mp3 ablegen.

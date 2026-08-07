@@ -1,13 +1,11 @@
-PLATZHALTER fuer: mona_antwort_3.mp3
-Werk:  Mona Lisa
-Frage: Warum hast du keine Augenbrauen?
-------------------------------------------------------------
-SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
-wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
-ohne Hall! Das Geister-Echo erzeugt die App selbst:
+FEHLT NOCH: mona_antwort_3.mp3
+============================================================
+Werk   : Mona Lisa
+Stimme : Mona Lisa selbst, leicht spöttisch, warm
+Frage  : Warum hast du keine Augenbrauen?
 
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
 Das fragt jeder! Ganz sicher weiß man es nicht. Möglich ist, dass feine Härchen einst gemalt waren und über die Jahrhunderte durch Reinigungen verloren gingen.
-------------------------------------------------------------
-Fertige MP3 unter genau diesem Namen hier ablegen, dann den
-Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
-Antwort automatisch mit der Browser-Stimme vor.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/mona_antwort_3.mp3 ablegen.

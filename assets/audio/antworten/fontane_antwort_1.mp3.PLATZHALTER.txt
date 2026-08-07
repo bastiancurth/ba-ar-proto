@@ -1,12 +1,10 @@
-PLATZHALTER fuer: fontane_antwort_1.mp3
-Werk:  Plauer Straße um 1920
-Frage: Wer sind Sie eigentlich?
-------------------------------------------------------------
-SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
-wie die Erzaehlung des Werks - Persona: Weinhaendler F. W. Wiesike):
+FEHLT NOCH: fontane_antwort_1.mp3
+============================================================
+Werk   : Plauer Straße um 1920
+Stimme : Weinhändler Wiesike, älterer Herr, gemütlich
+Frage  : Wer sind Sie eigentlich?
 
-Friedrich Wilhelm Wiesike, Weinhändler. Unser Haus in der Plauer Straße 19, Ecke Huckstraße, führt seit 1787 Wein – und unser berühmtester Kunde kam nie selbst herein: Sein Wein ging jedes Jahr hinaus nach Plaue, zu meinem Bruder und dessen Gast, dem Herrn Fontane.
-------------------------------------------------------------
-Fertige MP3 unter genau diesem Namen hier ablegen, dann den
-Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
-Antwort automatisch mit der Browser-Stimme vor.
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Friedrich Wilhelm Wiesike, Weinhändler. Unser Haus in der Plauer Straße 19, Ecke Huckstraße, führt seit 1787 Wein, und unseren berühmtesten Kunden habe ich hier drinnen vermutlich nie bedient: Sein Wein ging jedes Jahr hinaus nach Plaue, zu meinem Bruder und dessen Gast, dem Herrn Fontane.
+
+Danach als assets/audio/antworten/fontane_antwort_1.mp3 ablegen.

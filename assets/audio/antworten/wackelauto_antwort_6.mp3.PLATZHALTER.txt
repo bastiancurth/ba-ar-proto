@@ -1,0 +1,11 @@
+FEHLT NOCH: wackelauto_antwort_6.mp3
+============================================================
+Werk   : Das Wackelauto
+Stimme : der Blechfahrer, munter, kindlich stolz
+Frage  : Warum steigt dein Fahrer aus und schiebt?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Weil das mein Motor ist. Ein Schwungrad, kein Benzin, keine Batterie: einmal kräftig anschieben, dann läuft es von allein. Mein Fahrer, der kleine Herr im Matrosenanzug, ist das seit 1903 gewohnt. Er beschwert sich nie. Und ehrlich gesagt hat er auch keine andere Wahl, er ist aus Blech.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/wackelauto_antwort_6.mp3 ablegen.

@@ -1,0 +1,11 @@
+FEHLT NOCH: mona_antwort_7.mp3
+============================================================
+Werk   : Mona Lisa
+Stimme : Mona Lisa selbst, leicht spöttisch, warm
+Frage  : Warum lächelst du so?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Weil ich die Frage seit fünfhundert Jahren höre und immer noch nichts verrate. Der Trick steckt in Leonardos weicher Malweise: Meine Mundwinkel sind bewusst unscharf gehalten. Schauen Sie mir in die Augen, lächle ich deutlich. Schauen Sie direkt auf meinen Mund, verschwindet es fast. Nicht ich ändere mich, sondern Ihr Blick.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/mona_antwort_7.mp3 ablegen.

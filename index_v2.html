@@ -1341,59 +1341,35 @@
         // (idleZeigen setzt video.src pro Werk). Speicher: es laeuft immer nur EIN Video.
         const mitVideo = teilnehmer.find(w => !w.inProduktion);
         if (mitVideo) { videoWerk = mitVideo; video.src = mitVideo.videoIdle || mitVideo.video; }
-        // Nur Werke anlegen, deren Marker-Dateien wirklich existieren - alles andere
-        // wird gar nicht erst geladen (kein Rechenaufwand, keine Konsolen-Fehler).
-        // Sobald neue Marker in assets/markers/ liegen, ist das Werk automatisch dabei.
-        // Chromium unter Android verarbeitet im Test alle sieben Marker parallel
-        // in wenigen Sekunden. Safari, iOS-Browser und Firefox erhalten weiterhin
-        // die vorsichtige Warteschlange gegen haengende NFT-Initialisierungen.
-        let markerLadeIndex = 0;
-        const naechstenMarkerLaden = () => {
-            if (markerLadeIndex >= teilnehmer.length) return;
-            const w = teilnehmer[markerLadeIndex++];
-            console.log("[AR] lade Marker " + markerLadeIndex + "/" + teilnehmer.length, w.id);
-            let abgeschlossen = false;
-            let ereignisFreigegeben = false;
-            let waechter = null;
-            const fortsetzen = grund => {
-                if (abgeschlossen) return;
-                abgeschlossen = true;
-                if (waechter) clearTimeout(waechter);
-                window.removeEventListener("arjs-nft-loaded", beiMarkerBereit);
-                console.log("[AR] Marker-Warteschlange weiter", { id:w.id, grund:grund });
-                if (markerLadeIndex < teilnehmer.length) {
-                    toast("Marker werden vorbereitet: " + markerLadeIndex + " von " + teilnehmer.length, 2600);
-                    setTimeout(naechstenMarkerLaden, 250);
-                } else {
-                    toast("✅ Alle " + teilnehmer.length + " Marker wurden gestartet. Die Erkennung kann noch kurz laden.", 5000);
-                }
-            };
-            const beiMarkerBereit = () => {
-                if (ereignisFreigegeben) fortsetzen("Ladeereignis");
-            };
-            window.addEventListener("arjs-nft-loaded", beiMarkerBereit);
-            nftAnlegen(w, w.inProduktion ? null : "ki-video");
-            // Alte oder globale Ereignisse dürfen nicht sofort den gerade erst
-            // angelegten Marker überspringen. Danach gewinnt das echte Ereignis.
-            setTimeout(() => { ereignisFreigegeben = true; }, 500);
-            waechter = setTimeout(() => fortsetzen("Zeitwächter nach 3,5 Sekunden"), 3500);
-        };
+        // Alle NFT-Elemente muessen gemeinsam zur Szene gehoeren, bevor AR.js die
+        // Markerinitialisierung abschliesst. `arjs-nft-loaded` meldet den Abschluss
+        // aller bereits registrierten NFT-Marker und ist kein Ereignis pro Marker.
+        // Die fruehere Warteschlange legte deshalb auf Safari und Firefox nur Mona
+        // Lisa sicher an. Spaeter eingefuegte Marker wurden dort nicht mehr vom
+        // laufenden NFT-Controller erfasst.
+        let alleMarkerBereit = false;
+        window.addEventListener("arjs-nft-loaded", () => {
+            alleMarkerBereit = true;
+            console.log("[AR] Alle NFT-Marker sind initialisiert", teilnehmer.map(w => w.id));
+            toast("✅ Alle " + teilnehmer.length + " Marker sind bereit.", 5000);
+        }, { once:true });
+
         const bauen = () => {
-            if (CHROMIUM_ANDROID) {
-                teilnehmer.forEach(w => nftAnlegen(w, w.inProduktion ? null : "ki-video"));
-                markerLadeIndex = teilnehmer.length;
-                console.log("[AR] Android Chromium lädt alle Marker parallel", teilnehmer.map(w => w.id));
-                toast("✅ Alle " + teilnehmer.length + " Marker werden gleichzeitig vorbereitet.", 5000);
-            } else {
-                naechstenMarkerLaden();
-            }
+            teilnehmer.forEach(w => nftAnlegen(w, w.inProduktion ? null : "ki-video"));
+            console.log("[AR] Alle Marker gemeinsam registriert", teilnehmer.map(w => w.id));
+            toast("Alle " + teilnehmer.length + " Marker werden gemeinsam vorbereitet.", 5000);
         };
-        if (szene.hasLoaded) bauen(); else szene.addEventListener("loaded", bauen, { once:true });
+        // Das Skript steht direkt hinter der Szene. Durch den sofortigen Aufbau sind
+        // alle NFT-Elemente bereits vorhanden, waehrend A-Frame die Szene startet.
+        bauen();
+        setTimeout(() => {
+            if (!alleMarkerBereit)
+                toast("Die Marker werden noch vorbereitet. Bitte die Kamera kurz ruhig halten.", 6000);
+        }, 15000);
         if (teilnehmer.length > 3)
             console.log("Hinweis: " + teilnehmer.length + " Marker aktiv - auf aelteren Geraeten ggf. reduzieren.");
-        // Sichtbare Bereitschafts-Anzeige: jeder NFT-Worker meldet "arjs-nft-loaded",
-        // wenn sein Marker fertig geparst ist. Erst dann kann erkannt werden;
-        // auf Handys dauert das bei 7 Markern gern 10 bis 30 Sekunden.
+        // Sichtbare Bereitschafts-Anzeige: AR.js meldet "arjs-nft-loaded", wenn
+        // alle beim Szenenstart registrierten NFT-Marker fertig geladen sind.
     }
 
     // --- 6. START / LESEMODUS / NOTFALL-DEMO ---

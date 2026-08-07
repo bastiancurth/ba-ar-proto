@@ -109,7 +109,15 @@ const WERKE = [
       { frage: "Was ist Sfumato?",
         stichworte: ["sfumato", "technik", "malweise", "gemalt"],
         antwort: "Leonardos Geheimwaffe: viele hauchdünne Farbschichten ohne harte Konturen. Alles wird weich wie Rauch. Genau deshalb wirkt mein Lächeln so rätselhaft.",
-        audio: "assets/audio/antworten/mona_antwort_5.mp3" }
+        audio: "assets/audio/antworten/mona_antwort_5.mp3" },
+      { frage: "Was hat es mit der Torte auf sich?",
+        stichworte: ["torte", "kuchen", "beworfen", "angriff", "attacke", "stein", "suppe", "geworfen"],
+        antwort: "Sie haben es also gesehen! 2022 warf mir ein als alte Dame verkleideter Mann eine Sahnetorte entgegen. Das Panzerglas hat gehalten, ich blieb unversehrt. Es war nicht der erste Wurf: 1956 traf mich ein Stein und beschädigte den Farbauftrag am Ellenbogen, 2024 kippten Aktivistinnen Suppe gegen die Scheibe. Man gewöhnt sich an alles. Nur die Sahne war ehrlich gesagt eine Zumutung.",
+        audio: "assets/audio/antworten/mona_antwort_6.mp3" },
+      { frage: "Warum lächelst du so?",
+        stichworte: ["lächeln", "laecheln", "lächelst", "laechelst", "mundwinkel", "geheimnis", "rätselhaft"],
+        antwort: "Weil ich die Frage seit fünfhundert Jahren höre und immer noch nichts verrate. Der Trick steckt in Leonardos weicher Malweise: Meine Mundwinkel sind bewusst unscharf gehalten. Schauen Sie mir in die Augen, lächle ich deutlich. Schauen Sie direkt auf meinen Mund, verschwindet es fast. Nicht ich ändere mich, sondern Ihr Blick.",
+        audio: "assets/audio/antworten/mona_antwort_7.mp3" }
     ],
     kiHinweis: true
   },
@@ -121,8 +129,10 @@ const WERKE = [
     id: "loriot",
     freihandBild: "assets/bilder/freihand_loriot.png",  // Freihand-Hintergrund (Outpainting, PNG aus Photoshop; App probiert notfalls .jpg)
     freihandLage: { cx: 0.5, cy: 0.5, breite: 1.0, seite: 0.7506 },  // Querformat: volle 1080-px-Breite; seite = Hoehe/Breite des Originals
-    titel: "Loriot",
-    untertitel: "Vicco von Bülow (1923–2011) · Ehrenbürger, geboren in Brandenburg an der Havel",
+    // Sichtbar ist die Waldmops-Skulptur, deshalb traegt das Werk ihren Namen.
+    // Loriot bleibt der Erzaehler und wird im Untertitel und in der Geschichte genannt.
+    titel: "Waldmops",
+    untertitel: "Bronzefigur nach Loriots Erfindung, Clara Walter, seit 2015 · erzählt von Loriot (Vicco von Bülow, 1923 bis 2011)",
     // inProduktion entfernt am 19.07.2026: Video + Idle sind fertig und komprimiert in assets/videos/
     marker: "assets/markers/loriot/loriot",
     video:  "assets/videos/loriot.mp4",
@@ -173,7 +183,15 @@ const WERKE = [
       { frage: "Wer hat die Skulpturen gemacht?",
         stichworte: ["skulptur", "bronze", "künstler", "kuenstler", "gemacht", "walter"],
         antwort: "Die Künstlerin Clara Walter hat die Waldmöpse geschaffen. Die ersten wurden 2015 zur Bundesgartenschau aufgestellt, 2021 wurde die ganze Bande der Stadt geschenkt.",
-        audio: "assets/audio/antworten/loriot_antwort_5.mp3" }
+        audio: "assets/audio/antworten/loriot_antwort_5.mp3" },
+      { frage: "Darf man die Möpse füttern?",
+        stichworte: ["füttern", "fuettern", "futter", "fütterung", "fuetterung", "essen geben", "leckerli"],
+        antwort: "Auf gar keinen Fall. Der Waldmops ist ein Wildtier und ernährt sich selbstständig, vorzugsweise von dem, was unter Parkbänken liegt. Wer ihn füttert, macht ihn zutraulich, und ein zutraulicher Waldmops ist ein Mops, der auf Fototermine besteht. Bitte beobachten Sie ihn aus respektvoller Entfernung.",
+        audio: "assets/audio/antworten/loriot_antwort_6.mp3" },
+      { frage: "Haben Waldmöpse wirklich ein Geweih?",
+        stichworte: ["wirklich ein geweih", "echtes geweih", "merkmal", "aussehen", "gehörnt", "gehoernt"],
+        antwort: "Ein kleines, ja. Genau daran erkennt man ihn, und genau darum ging es 1972 in meiner Tierstunde: Der Züchterehrgeiz hat aus dem gehörnten Wildtier den Schoßhund gemacht. Ein Jammer. Betrachten Sie das Geweih also mit dem gebotenen Respekt. Es ist alles, was dem Waldmops von seiner wilden Vergangenheit geblieben ist.",
+        audio: "assets/audio/antworten/loriot_antwort_7.mp3" }
     ],
     kiHinweis: true
   },
@@ -197,7 +215,7 @@ const WERKE = [
 
     geschichte: "Pssst, kommen Sie näher, wir erzählen es auch nur Ihnen. Der Mann, der uns gezeichnet hat, hieß Fritz Knitter. Ein Brandenburger mit spitzer Feder: erst Beamter, später städtischer Arbeiter, und gezeichnet hat er trotzdem immer. Manchmal, so erzählt man sich, sogar auf Verpackungspapier. Die Leute vergleichen ihn gern mit dem Zille aus Berlin, weil er wie der den kleinen Leuten aufs Maul und auf die Hüte geschaut hat. Uns hat er um 1930 auf diese Bank gesetzt, zum ewigen Tratschen. Heute hängen wir im Stadtmuseum im Frey-Haus. Und wissen Sie was? Kennen tut ihn kaum noch jemand. Dabei sitzen wir auf dem besten Beweis: auf seiner Bank.",
 
-    wahrErzaehlt: "Belegt: die Zeichnung aus den 1930ern im Stadtmuseum (Schenkung 2023) und dass über Fritz Knitter kaum etwas bekannt ist (Adressbucheinträge 1913/14 und 1938/39). Erzählt: der gesamte Tratsch, die Meyern, der Hut, der Bäcker, alles zeittypische Fiktion ohne reale Vorbilder.",
+    wahrErzaehlt: "Belegt: die Zeichnung aus den 1930ern im Stadtmuseum (Schenkung 2023) und dass über Fritz Knitter kaum etwas bekannt ist (Adressbucheinträge 1913/14 und 1938/39). Erzählt: dass die vier Frauen sprechen und ausgerechnet über ihren eigenen Zeichner tratschen; der Vergleich mit Zille ist eine gängige Einordnung, kein Urteil Knitters über sich selbst.",
 
     fakten: [
       "Die Zeichnungen Fritz Knitters entstanden vorwiegend in den 1930er-Jahren, oft auf Verpackungspapier.",
@@ -227,7 +245,15 @@ const WERKE = [
       { frage: "Wer ist dieser Zille?",
         stichworte: ["zille", "berlin", "vergleich", "stil"],
         antwort: "Heinrich Zille, der berühmte Berliner Zeichner der kleinen Leute. Unser Knitter hatte denselben Blick: karikaturhaft, warmherzig und mit einem frechen Spruch unter jedem Bild. Nur berühmt wurde er damit nie.",
-        audio: "assets/audio/antworten/knitter_antwort_4.mp3" }
+        audio: "assets/audio/antworten/knitter_antwort_4.mp3" },
+      { frage: "Über wen redet ihr gerade?",
+        stichworte: ["über wen", "ueber wen", "redet ihr", "tratscht", "klatsch", "gerede", "wer ist gemeint"],
+        antwort: "Über den Mann mit der spitzen Feder natürlich. Der hat hier gesessen und uns gezeichnet, als wären wir nicht da. Fritz Knitter hieß er. Beamter war er zuerst, später städtischer Arbeiter, und gezeichnet hat er trotzdem immer, sogar auf Verpackungspapier, sagt man. Über den reden wir. Und über jeden, der vorbeigeht. Sie zum Beispiel stehen jetzt auch schon eine Weile da.",
+        audio: "assets/audio/antworten/knitter_antwort_5.mp3" },
+      { frage: "Stört es euch, dass er euch heimlich gezeichnet hat?",
+        stichworte: ["heimlich", "gezeichnet", "stört", "stoert", "erlaubnis", "gefragt", "ohne zu fragen"],
+        antwort: "Anfangs schon. Man sitzt hier, hält ein Schwätzchen, und der Herr hält die Nase in sein Papier und macht Striche. Gefragt hat er nie. Aber sehen Sie es einmal so: Die Leute vergleichen ihn mit dem Zille aus Berlin, weil er den kleinen Leuten aufs Maul und auf die Hüte geschaut hat. Ihn kennt heute kaum noch jemand. Uns aber hängen sie ins Stadtmuseum. Wer hat da nun den besseren Schnitt gemacht?",
+        audio: "assets/audio/antworten/knitter_antwort_6.mp3" }
     ],
     kiHinweis: true
   },
@@ -286,7 +312,15 @@ const WERKE = [
       { frage: "Warum bist du umgezogen?",
         stichworte: ["umgezogen", "umzug", "1716", "standort", "früher", "frueher"],
         antwort: "1716 war ich den Soldaten beim Exerzieren im Weg! Mit Genehmigung des Soldatenkönigs Friedrich Wilhelm I. versetzte man mich vor das Neustädtische Rathaus. Seit 1946 stehe ich nun hier. Ein Roland beschwert sich nicht.",
-        audio: "assets/audio/antworten/roland_antwort_5.mp3" }
+        audio: "assets/audio/antworten/roland_antwort_5.mp3" },
+      { frage: "Was hast du gegen die Tauben?",
+        stichworte: ["tauben", "vögel", "voegel", "taube", "vogel", "dreck"],
+        antwort: "Fragen Sie das mal jemanden, der seit über fünfhundert Jahren stillhalten muss. Ich halte das Schwert aufrecht für die Freiheit dieser Stadt, und dann kommt so ein gefiedertes Etwas und landet ausgerechnet da oben, wo mein Donnerbart wächst. In der Mulde auf meinem Kopf, wohlgemerkt, meiner einzigen Grünanlage. Aushalten gehört zum Amt. Gefallen muss es mir nicht.",
+        audio: "assets/audio/antworten/roland_antwort_6.mp3" },
+      { frage: "Bist du der einzige Roland?",
+        stichworte: ["einzige", "andere rolande", "weitere", "bremen", "kollegen", "wo noch", "nur du"],
+        antwort: "Keineswegs. In vielen Städten des Nordens steht einer von uns, immer dort, wo eine Stadt auf ihr Marktrecht und ihre Freiheit pochte. Ich stehe seit 1474 hier, fünf Meter fünfunddreißig, und man sagt mir nach, ich sei einer der schönsten von allen. Ich widerspreche dem nicht. Zusammenkommen tun wir freilich nie. Beweglichkeit ist nicht die Stärke unseres Standes.",
+        audio: "assets/audio/antworten/roland_antwort_7.mp3" }
     ],
     kiHinweis: true
   },
@@ -330,7 +364,7 @@ const WERKE = [
     dialog: [
       { frage: "Wer sind Sie eigentlich?",
         stichworte: ["wer", "bist", "sind", "sie", "name", "vorstellen", "beruehmt", "berühmt"],
-        antwort: "Friedrich Wilhelm Wiesike, Weinhändler. Unser Haus in der Plauer Straße 19, Ecke Huckstraße, führt seit 1787 Wein, und unser berühmtester Kunde kam nie selbst herein: Sein Wein ging jedes Jahr hinaus nach Plaue, zu meinem Bruder und dessen Gast, dem Herrn Fontane.",
+        antwort: "Friedrich Wilhelm Wiesike, Weinhändler. Unser Haus in der Plauer Straße 19, Ecke Huckstraße, führt seit 1787 Wein, und unseren berühmtesten Kunden habe ich hier drinnen vermutlich nie bedient: Sein Wein ging jedes Jahr hinaus nach Plaue, zu meinem Bruder und dessen Gast, dem Herrn Fontane.",
         audio: "assets/audio/antworten/fontane_antwort_1.mp3" },
       { frage: "War Fontane wirklich in diesem Laden?",
         stichworte: ["laden", "wirklich", "drin", "betreten", "gekauft", "fontane"],
@@ -346,12 +380,20 @@ const WERKE = [
         audio: "assets/audio/antworten/fontane_antwort_4.mp3" },
       { frage: "Woher kam der Wein?",
         stichworte: ["wein", "rheinwein", "keller", "flasche", "woher"],
-        antwort: "Aus meinem Gewölbekeller, ganz hinten, wo die guten Flaschen liegen. Seit 1787 ist die Handlung in Familienhand, die Weine kamen aus der halben Welt zu uns an die Havel, und der beste Rheinwein ging Flasche um Flasche hinaus nach Plaue. Manche Geschichten beginnen eben mit einer Flasche.",
+        antwort: "Aus meinem Gewölbekeller, ganz hinten, wo die guten Flaschen liegen. Seit 1787 ist die Handlung in Familienhand, und der beste Rheinwein ging von hier Flasche um Flasche hinaus nach Plaue. Manche Geschichten beginnen eben mit einer Flasche.",
         audio: "assets/audio/antworten/fontane_antwort_5.mp3" },
       { frage: "Was wurde aus dem Haus?",
         stichworte: ["haus", "heute", "geworden", "brand", "1945"],
         antwort: "Das Geschäftshaus in der Plauer Straße 19 brannte in der Nacht zum 1. Mai 1945 nieder, nur die alten Gewölbekeller blieben erhalten. Geblieben ist auch die Fotografie um 1920 mit dem Plauer Torturm, genau das Bild, das hier vor Ihnen hängt.",
-        audio: "assets/audio/antworten/fontane_antwort_6.mp3" }
+        audio: "assets/audio/antworten/fontane_antwort_6.mp3" },
+      { frage: "Was ist da eben zerbrochen?",
+        stichworte: ["zerbrochen", "kaputt", "runtergefallen", "scherben", "gescheppert", "malheur", "was war das"],
+        antwort: "Sie haben es gehört. Eine Flasche, und ausgerechnet eine von den guten. Ich hatte sie gegen das Licht gehalten, so wie man das tut, und dann war der Boden schneller als meine Hand. Kein Wort zu meinem Bruder in Plaue, ja? Der wartet nämlich auf genau die. Ein Trost bleibt: Der Keller ist tief, und es liegt noch mehr davon unten. Aber der Jahrgang, meine Güte, der Jahrgang.",
+        audio: "assets/audio/antworten/fontane_antwort_7.mp3" },
+      { frage: "Hat Herr Fontane meinen Wein je gelobt?",
+        stichworte: ["gelobt", "geschmeckt", "gesagt", "zitat", "geurteilt", "fünf schlösser", "fuenf schloesser"],
+        antwort: "Auf seine Art, und aus seiner Feder wiegt das schwer. Überliefert ist, er habe bei meinem Bruder die Stunden zwischen Schopenhauer, altem Rheinwein und Naturgenuss gewissenhaft geteilt. Beachten Sie die Reihenfolge, ich habe sie mir gemerkt. Ein Philosoph vor meinem Wein, damit kann ich leben. Gekommen ist er ja trotzdem jedes Jahr wieder, zwischen 1874 und 1880.",
+        audio: "assets/audio/antworten/fontane_antwort_8.mp3" }
     ],
     kiHinweis: true
   },
@@ -405,7 +447,15 @@ const WERKE = [
       { frage: "Wer sitzt da am Steuer?",
         stichworte: ["steuer", "junge", "fahrer", "matrose", "sitzt"],
         antwort: "Mein treuester Passagier: ein kleiner Junge im Matrosenanzug! Seit 1903 hält er meine Lenkkurbel fest. Wir zwei haben noch keine einzige Panne gehabt.",
-        audio: "assets/audio/antworten/wackelauto_antwort_4.mp3" }
+        audio: "assets/audio/antworten/wackelauto_antwort_4.mp3" },
+      { frage: "Warum wackelst du eigentlich so?",
+        stichworte: ["wackelst", "wackeln", "wackel", "zittern", "ruckeln", "bewegung", "warum so"],
+        antwort: "Das ist kein Wackeln, das ist Fahrgefühl. In mir steckt ein Schwungrad, kein Uhrwerk und kein Motor, und beim Losfahren taumele ich wie ein echtes Automobil über Kopfsteinpflaster. Meinen Namen habe ich genau daher. Ein Auto, das brav geradeaus fährt, hätte 1903 im Kinderzimmer auch niemanden hinter dem Ofen hervorgeholt.",
+        audio: "assets/audio/antworten/wackelauto_antwort_5.mp3" },
+      { frage: "Warum steigt dein Fahrer aus und schiebt?",
+        stichworte: ["schiebt", "schieben", "aussteigen", "steigt aus", "anschieben", "kurbeln", "starten", "springt nicht an"],
+        antwort: "Weil das mein Motor ist. Ein Schwungrad, kein Benzin, keine Batterie: einmal kräftig anschieben, dann läuft es von allein. Mein Fahrer, der kleine Herr im Matrosenanzug, ist das seit 1903 gewohnt. Er beschwert sich nie. Und ehrlich gesagt hat er auch keine andere Wahl, er ist aus Blech.",
+        audio: "assets/audio/antworten/wackelauto_antwort_6.mp3" }
     ],
     kiHinweis: true
   },
@@ -450,7 +500,7 @@ const WERKE = [
         audio: "assets/audio/antworten/bielefeld_antwort_1.mp3" },
       { frage: "Frau Bielefeld, wer hilft Ihnen bei der Arbeit?",
         stichworte: ["hilft", "töchter", "toechter", "familie", "lucie", "herta"],
-        antwort: "Meine Töchter. Lucie schaufelt und führt die Kartei, Herta zeichnet. Über achthundert Blätter haben die beiden gefertigt, jede Scherbe einzeln. Ohne Dokumentation ist Graben nur Wühlen.",
+        antwort: "Meine Töchter. Lucie schaufelt, Herta zeichnet. Über achthundert Blätter haben die beiden gefertigt, jede Scherbe einzeln. Ohne Dokumentation ist Graben nur Wühlen.",
         audio: "assets/audio/antworten/bielefeld_antwort_2.mp3" },
       { frage: "Man nennt Sie berüchtigt. Wie kommt das?",
         stichworte: ["berüchtigt", "beruechtigt", "pfarrer", "ruf"],
@@ -463,7 +513,11 @@ const WERKE = [
       { frage: "Und was war nun mit dem Maulwurf?",
         stichworte: ["maulwurf", "konkurrenz", "tier"],
         antwort: "Ach, der. Kam mir heute früh mitten in die Grabung. Gräbt schneller als ich, das gebe ich zu. Aber er dokumentiert nichts, und damit ist er raus aus der Wissenschaft. Kleiner Scherz übrigens, den Maulwurf habe ich erfunden. Fast alles andere nicht.",
-        audio: "assets/audio/antworten/bielefeld_antwort_5.mp3" }
+        audio: "assets/audio/antworten/bielefeld_antwort_5.mp3" },
+      { frage: "Warum haben Ihre Töchter alles gezeichnet?",
+        stichworte: ["gezeichnet", "zeichnungen", "zeichnen", "dokumentiert", "achthundert"],
+        antwort: "Weil ein Fund, den niemand festhält, verloren ist. Fotografiert haben wir auch, die Gefäße stehen fein säuberlich in einem Album. Aber eine Aufnahme zeigt nicht, wie eine Scherbe gebrochen ist und wie die Stücke im Boden lagen. Dafür braucht es den Stift. Über achthundert Blätter sind so entstanden, rund vierhundert davon liegen heute im Stadtmuseum. Ohne sie wüsste man von meiner Arbeit so gut wie nichts.",
+        audio: "assets/audio/antworten/bielefeld_antwort_6.mp3" }
     ],
     kiHinweis: true
   },

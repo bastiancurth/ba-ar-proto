@@ -1,13 +1,11 @@
-PLATZHALTER fuer: roland_antwort_4.mp3
-Werk:  Der Roland von Brandenburg
-Frage: Wie hast du den Krieg überstanden?
-------------------------------------------------------------
-SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
-wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
-ohne Hall! Das Geister-Echo erzeugt die App selbst:
+FEHLT NOCH: roland_antwort_4.mp3
+============================================================
+Werk   : Der Roland von Brandenburg
+Stimme : der Roland, tief, würdevoll, leicht genervt
+Frage  : Wie hast du den Krieg überstanden?
 
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
 Mit Glück und Voraussicht: 1941 hat man mich abgebaut und eingelagert. Das Neustädtische Rathaus, vor dem ich stand, wurde 1945 zerstört. Ich blieb unversehrt und stehe seit 1946 hier vor dem Altstädtischen Rathaus.
-------------------------------------------------------------
-Fertige MP3 unter genau diesem Namen hier ablegen, dann den
-Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
-Antwort automatisch mit der Browser-Stimme vor.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/roland_antwort_4.mp3 ablegen.

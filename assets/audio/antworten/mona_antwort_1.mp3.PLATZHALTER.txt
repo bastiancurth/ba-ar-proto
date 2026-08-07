@@ -1,13 +1,11 @@
-PLATZHALTER fuer: mona_antwort_1.mp3
-Werk:  Mona Lisa
-Frage: Warum bist du so berühmt?
-------------------------------------------------------------
-SPRECHTEXT (exakt so in ElevenLabs einfuegen, gleiche Stimme
-wie die Erzaehlung des Werks). TROCKEN einsprechen lassen,
-ohne Hall! Das Geister-Echo erzeugt die App selbst:
+FEHLT NOCH: mona_antwort_1.mp3
+============================================================
+Werk   : Mona Lisa
+Stimme : Mona Lisa selbst, leicht spöttisch, warm
+Frage  : Warum bist du so berühmt?
 
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
 Ehrlich gesagt: durch einen Skandal. 1911 stahl mich der Handwerker Vincenzo Peruggia aus dem Louvre. Zwei Jahre war ich verschwunden, und die ganze Welt sprach über mich. Vorher war ich ein bewundertes Gemälde, danach eine Legende.
-------------------------------------------------------------
-Fertige MP3 unter genau diesem Namen hier ablegen, dann den
-Platzhalter loeschen. Solange die MP3 fehlt, liest die App die
-Antwort automatisch mit der Browser-Stimme vor.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/mona_antwort_1.mp3 ablegen.

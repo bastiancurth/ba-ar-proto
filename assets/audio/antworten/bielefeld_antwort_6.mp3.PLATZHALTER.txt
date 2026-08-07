@@ -1,0 +1,10 @@
+FEHLT NOCH: bielefeld_antwort_6.mp3
+============================================================
+Werk   : Die Ausgräberin vom Hasselberg
+Stimme : Reporter und Marie Bielefeld im Wechsel
+Frage  : Warum haben Ihre Töchter alles gezeichnet?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Weil ein Fund, den niemand festhält, verloren ist. Fotografiert haben wir auch, die Gefäße stehen fein säuberlich in einem Album. Aber eine Aufnahme zeigt nicht, wie eine Scherbe gebrochen ist und wie die Stücke im Boden lagen. Dafür braucht es den Stift. Über achthundert Blätter sind so entstanden, rund vierhundert davon liegen heute im Stadtmuseum. Ohne sie wüsste man von meiner Arbeit so gut wie nichts.
+
+Danach als assets/audio/antworten/bielefeld_antwort_6.mp3 ablegen.

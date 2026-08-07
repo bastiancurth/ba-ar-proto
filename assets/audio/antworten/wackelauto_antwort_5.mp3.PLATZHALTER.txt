@@ -1,0 +1,10 @@
+FEHLT NOCH: wackelauto_antwort_5.mp3
+============================================================
+Werk   : Das Wackelauto
+Stimme : der Blechfahrer, munter, kindlich stolz
+Frage  : Warum wackelst du eigentlich so?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Das ist kein Wackeln, das ist Fahrgefühl. In mir steckt ein Schwungrad, kein Uhrwerk und kein Motor, und beim Losfahren taumele ich wie ein echtes Automobil über Kopfsteinpflaster. Meinen Namen habe ich genau daher. Ein Auto, das brav geradeaus fährt, hätte 1903 im Kinderzimmer auch niemanden hinter dem Ofen hervorgeholt.
+
+Danach als assets/audio/antworten/wackelauto_antwort_5.mp3 ablegen.

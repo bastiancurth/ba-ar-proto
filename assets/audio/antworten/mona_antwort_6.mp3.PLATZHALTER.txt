@@ -1,0 +1,11 @@
+FEHLT NOCH: mona_antwort_6.mp3
+============================================================
+Werk   : Mona Lisa
+Stimme : Mona Lisa selbst, leicht spöttisch, warm
+Frage  : Was hat es mit der Torte auf sich?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Sie haben es also gesehen! 2022 warf mir ein als alte Dame verkleideter Mann eine Sahnetorte entgegen. Das Panzerglas hat gehalten, ich blieb unversehrt. Es war nicht der erste Wurf: 1956 traf mich ein Stein und beschädigte den Farbauftrag am Ellenbogen, 2024 kippten Aktivistinnen Suppe gegen die Scheibe. Man gewöhnt sich an alles. Nur die Sahne war ehrlich gesagt eine Zumutung.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/mona_antwort_6.mp3 ablegen.

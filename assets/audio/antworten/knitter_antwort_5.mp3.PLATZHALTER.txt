@@ -1,0 +1,11 @@
+FEHLT NOCH: knitter_antwort_5.mp3
+============================================================
+Werk   : Frauen auf einer Bank
+Stimme : die vier Frauen auf der Bank, tratschend, halblaut
+Frage  : Über wen redet ihr gerade?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Über den Mann mit der spitzen Feder natürlich. Der hat hier gesessen und uns gezeichnet, als wären wir nicht da. Fritz Knitter hieß er. Beamter war er zuerst, später städtischer Arbeiter, und gezeichnet hat er trotzdem immer, sogar auf Verpackungspapier, sagt man. Über den reden wir. Und über jeden, der vorbeigeht. Sie zum Beispiel stehen jetzt auch schon eine Weile da.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/knitter_antwort_5.mp3 ablegen.

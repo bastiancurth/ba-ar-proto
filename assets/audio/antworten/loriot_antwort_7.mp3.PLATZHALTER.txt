@@ -1,0 +1,11 @@
+FEHLT NOCH: loriot_antwort_7.mp3
+============================================================
+Werk   : Waldmops
+Stimme : Loriot als Erzähler, trocken, Tierdoku-Ernst
+Frage  : Haben Waldmöpse wirklich ein Geweih?
+
+SPRECHTEXT (exakt so einsprechen, Stand 07.08.2026):
+Ein kleines, ja. Genau daran erkennt man ihn, und genau darum ging es 1972 in meiner Tierstunde: Der Züchterehrgeiz hat aus dem gehörnten Wildtier den Schoßhund gemacht. Ein Jammer. Betrachten Sie das Geweih also mit dem gebotenen Respekt. Es ist alles, was dem Waldmops von seiner wilden Vergangenheit geblieben ist.
+
+Hinweise: keine Umlaute-Probleme bei ElevenLabs beachten, ruhig sprechen,
+am Ende 0,3 Sekunden Stille lassen. Danach nach assets/audio/antworten/loriot_antwort_7.mp3 ablegen.
