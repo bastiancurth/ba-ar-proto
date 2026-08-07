@@ -721,6 +721,7 @@
     }
 
     window.geschichteAbspielen = function() {
+        MESS.geschichte++;
         if (!videoWerk) return;
         if (videoModus === "geschichte") { idleZeigen(videoWerk); return; }
         sprechStopp();                    // nichts spricht doppelt
@@ -878,7 +879,7 @@
         if (!aktuellesWerk) return;
         // Laengere Texte und der Chat duerfen nie vom Tracking abhaengen. Beim
         // Oeffnen wird das erkannte Werk festgehalten; das Handy darf sinken.
-        if (!freihandModus) { freihandSetzen(true); tourAktion("bequem"); }
+        if (!freihandModus) { MESS.bequem++; freihandSetzen(true); tourAktion("bequem"); }
         ansichtModus = "bequem";
         zurKameraBtn.style.display = brauchtKamera ? "block" : "none";
         if (videoWerk && videoWerk.videoIdle && videoModus === "geschichte") idleZeigen(videoWerk);
@@ -888,6 +889,7 @@
     };
 
     window.zurKamera = function() {
+        MESS.zurueckKamera++;
         window.panelToggle(false);
         if (!brauchtKamera) { toast("Diese Ansicht wurde ohne Kamera gestartet.", 3000); return; }
         freihandSetzen(false);
@@ -900,6 +902,39 @@
     // Kalibrier-Zustand (bezieht sich auf das aktuelle Werk)
     let K = { px:0, py:0, pz:0, rx:0, ry:0, rz:0, s:1 };
     let arVideoEl = null;
+
+    // MESSWERTE: zaehlt anonym mit, was technisch passiert, damit sich im
+    // Experiment Bedienprobleme von Technikproblemen trennen lassen.
+    // Nichts davon verlaesst das Geraet; ausgelesen wird ueber den Knopf
+    // "Geraete-Info" im Justier-Panel (kopiert alles in die Zwischenablage).
+    const MESS = {
+        start: Date.now(),
+        gefunden: {},        // je Werk: wie oft erkannt
+        verloren: {},        // je Werk: wie oft das Tracking abriss
+        ersteErkennung: {},  // je Werk: Sekunden von der ersten Suche bis zum ersten Treffer
+        sucheSeit: {},       // Hilfsfeld fuer die Zeitmessung
+        geschichte: 0,       // wie oft die Erzaehlung gestartet wurde
+        bequem: 0,           // Wechsel in die bequeme Ansicht
+        zurueckKamera: 0,    // Rueckkehr zur Kamera
+        justierGeoeffnet: 0, // wie oft nachjustiert werden musste
+        demoModus: 0,        // Notausgang benutzt = Tracking hat nicht gereicht
+        chatFragen: 0,       // gestellte Fragen insgesamt
+        chatOhneTreffer: [], // Fragen, auf die es keine Antwort gab (inhaltliche Luecke)
+        fehler: []           // JavaScript-Fehler im Feld
+    };
+    const messZaehl = function (topf, id) { MESS[topf][id] = (MESS[topf][id] || 0) + 1; };
+    function messSucheBeginnt(id) {
+        if (!MESS.sucheSeit[id]) MESS.sucheSeit[id] = Date.now();
+    }
+    function messTreffer(id) {
+        messZaehl("gefunden", id);
+        if (MESS.ersteErkennung[id] === undefined && MESS.sucheSeit[id])
+            MESS.ersteErkennung[id] = Math.round((Date.now() - MESS.sucheSeit[id]) / 100) / 10;
+    }
+    window.addEventListener("error", function (e) {
+        if (MESS.fehler.length < 20)
+            MESS.fehler.push((e.message || "Fehler") + " @ " + String(e.filename || "").split("/").pop() + ":" + (e.lineno || "?"));
+    });
 
     // Chromium auf Android benötigt den Canvas-Umweg gegen den Mali-Schwarzbalken.
     // Firefox bekommt auf Android die direkte Textur, auf iOS den Canvas-Gegenversuch.
@@ -1251,6 +1286,7 @@
                 toast("Das ist ein anderes Werk. In dieser Station wird " + tourZiel.titel + " gesucht.", 3500);
                 return;
             }
+            messTreffer(w.id);
             status("✅ " + w.titel + " erkannt", "var(--ok)");
             statusBar.style.backgroundColor = "rgba(0,40,15,0.85)";
             const neuesWerk = aktuellesWerk !== w;
@@ -1277,6 +1313,7 @@
         });
         nft.addEventListener("markerLost", () => {
             console.log("[AR] markerLost", { id: w.id, titel: w.titel });
+            messZaehl("verloren", w.id);
             if (freihandModus || document.getElementById("fakten-panel").classList.contains("offen")) return;
             // Kurze Tracking-Aussetzer werden ignoriert. Erst wenn das Bild wirklich
             // weg ist, erhaelt die Person eine verstaendliche Wahl statt eines Stopps.
@@ -1356,6 +1393,7 @@
 
         const bauen = () => {
             teilnehmer.forEach(w => nftAnlegen(w, w.inProduktion ? null : "ki-video"));
+            teilnehmer.forEach(w => messSucheBeginnt(w.id));
             console.log("[AR] Alle Marker gemeinsam registriert", teilnehmer.map(w => w.id));
             toast("Alle " + teilnehmer.length + " Marker werden gemeinsam vorbereitet.", 5000);
         };
@@ -1580,6 +1618,7 @@
     window.freihandToggle = function() { freihandSetzen(!freihandModus); };
 
     window.forceTracking = function() {
+        MESS.demoModus++;
         document.getElementById("home-btn").style.display = "flex";
         startOverlay.style.display = "none";
         status("⚠️ DEMO-MODUS", "var(--warn)");
@@ -1748,7 +1787,19 @@
             "WebGL: " + webgl,
             "GPU/WebGL-Renderer: " + gpu,
             "AR-Kamerastream: " + arKameraInfo,
-            "Justier-Delta (Geraeteprofil): " + JSON.stringify(geraeteDelta)
+            "Justier-Delta (Geraeteprofil): " + JSON.stringify(geraeteDelta),
+            "",
+            "--- MESSWERTE DIESES DURCHLAUFS ---",
+            "Dauer seit Start: " + Math.round((Date.now() - MESS.start) / 1000) + " s",
+            "Erkennungen je Werk: " + JSON.stringify(MESS.gefunden),
+            "Trackingverluste je Werk: " + JSON.stringify(MESS.verloren),
+            "Sekunden bis zur ersten Erkennung: " + JSON.stringify(MESS.ersteErkennung),
+            "Geschichte gestartet: " + MESS.geschichte,
+            "Bequeme Ansicht gewaehlt: " + MESS.bequem + " | Zurueck zur Kamera: " + MESS.zurueckKamera,
+            "Justier-Modus geoeffnet: " + MESS.justierGeoeffnet + " | Demo-Modus benutzt: " + MESS.demoModus,
+            "Chatfragen gestellt: " + MESS.chatFragen,
+            "Fragen ohne Antwort: " + (MESS.chatOhneTreffer.join(" | ") || "keine"),
+            "JavaScript-Fehler: " + (MESS.fehler.join(" | ") || "keine")
         ].join("\n");
         (navigator.clipboard ? navigator.clipboard.writeText(info) : Promise.reject())
             .then(() => toast("📋 Geräte-Info kopiert, einfach ins Beobachtungsprotokoll einfügen.", 3500))
@@ -1869,6 +1920,9 @@
         tippt.classList.add("tippt");
         const eintrag = antwortFinden(text);
         const antwort = eintrag ? eintrag.antwort : (smalltalkAntwort(text) || ARCHIV_SATZ);
+        MESS.chatFragen++;
+        if (!eintrag && antwort === ARCHIV_SATZ && MESS.chatOhneTreffer.length < 40)
+            MESS.chatOhneTreffer.push(text.slice(0, 90));   // zeigt inhaltliche Luecken auf
         // kurze Denkpause, damit es nicht nach Automat aussieht
         setTimeout(() => {
             tippt.classList.remove("tippt");
@@ -1917,7 +1971,7 @@
     statusBar.addEventListener("click", () => {
         const jetzt = Date.now();
         taps = taps.filter(t => jetzt - t < 2500); taps.push(jetzt);
-        if (taps.length >= 5) { taps = []; kalibToggle(true); }
+        if (taps.length >= 5) { taps = []; MESS.justierGeoeffnet++; kalibToggle(true); }
     });
     window.addEventListener("keydown", e => { if (e.key === "k") kalibToggle(true); });
 

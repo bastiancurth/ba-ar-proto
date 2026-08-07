@@ -1,0 +1,6 @@
+Diese Sprechtexte gehoeren zu Chat-Antworten, die BEWUSST nicht vertont werden.
+Entscheidung vom 07.08.2026: fuenf vertonte Antworten je Werk reichen; die
+uebrigen bleiben im Chat ueber Stichwoerter erreichbar und werden im Text
+angezeigt beziehungsweise auf Wunsch von der Browserstimme vorgelesen.
+Nichts geloescht: Wer spaeter doch vertonen will, verschiebt die Datei zurueck
+und traegt in werke.js beim passenden Eintrag wieder ein audio-Feld ein.
