@@ -1695,7 +1695,9 @@
     // Antworten kommen NICHT von einer Live-KI, sondern aus dem geprueften
     // Frage-Pool in werke.js (Pre-Cache-Prinzip). Kein Server, kein Halluzinieren.
     // Optional: haengt an einer Antwort ein  audio: "pfad.mp3" , wird sie vorgelesen.
-    const ARCHIV_SATZ = "Dazu ist mir aus den Archiven nichts bekannt. Aber frag mich gern etwas anderes!";
+    const ARCHIV_STANDARD = "Dazu ist mir aus den Archiven nichts bekannt. Aber frag mich gern etwas anderes!";
+    // Der Satz muss zur Figur passen: die vier Frauen auf der Bank sprechen im Wir.
+    const archivSatz = () => persona("archiv", ARCHIV_STANDARD);
 
     // Vorlesen: generisches Text-to-Speech ueber den Browser (kostenlos, offline).
     // Liegt zu einer Antwort eine ElevenLabs-MP3 vor, hat die Vorrang.
@@ -1832,7 +1834,8 @@
             document.getElementById("chat-eingabe").style.display = "none";
             return;
         }
-        blase("Hallo! Ich bin " + aktuellesWerk.titel + ". Frag mich etwas, oder tipp auf eine der Fragen unten.", "werk");
+        blase(persona("vorstellung", "Hallo! Frag mich etwas über meine Geschichte.")
+                  + " Frag mich etwas, oder tipp auf eine der Fragen unten.", "werk");
         const chips = document.getElementById("chat-chips");
         pool.forEach(d => {
             const c = document.createElement("button");
@@ -1867,19 +1870,34 @@
     // Jede Figur begruesst in ihrer eigenen Stimme; Rest bleibt allgemein.
     const PERSONA = {
         loriot:     { gruss: "Wuff. Verzeihung: Guten Tag. Man ist hier schließlich wer. Frag ruhig, aber erschreck mir den Schmetterling nicht.",
-                      befinden: "Bronzen, danke der Nachfrage. Bei dem Wetter setzt man Patina an." },
+                      befinden: "Bronzen, danke der Nachfrage. Bei dem Wetter setzt man Patina an.",
+                      vorstellung: "Loriot mein Name. Vor Ihnen sitzt mein Waldmops, ein scheues Wildtier und meine schönste Erfindung. Ich spreche für ihn; er selbst ist wortkarg.",
+                      danke: "Gern geschehen. Der Waldmops dankt ebenfalls, auf seine Art." },
         mona:       { gruss: "Ah, Besuch! Ich bin Blicke gewohnt, aber ein Hallo ist auch mal schön. Frag mich etwas.",
-                      befinden: "Man lächelt seit fünfhundert Jahren; da fragt selten jemand, wie es MIR geht. Danke: gut." },
+                      befinden: "Man lächelt seit fünfhundert Jahren; da fragt selten jemand, wie es MIR geht. Danke: gut.",
+                      vorstellung: "Ich bin die Mona Lisa. Gemalt hat mich Leonardo, berühmt gemacht hat mich ein Dieb. Frag ruhig weiter.",
+                      danke: "Sehr gern. Ich hänge ohnehin nur herum." },
         knitter:    { gruss: "Nanu, wir bekommen Gesellschaft! Setz dich dazu, wir erzählen gern.",
-                      befinden: "Uns geht es gut, wir sitzen ja. Und Gesprächsstoff gibt es hier reichlich." },
+                      befinden: "Uns geht es gut, wir sitzen ja. Und Gesprächsstoff gibt es hier reichlich.",
+                      vorstellung: "Wir sind die vier Damen von der Bank. Gezeichnet hat uns Fritz Knitter, in den dreißiger Jahren, mitten im schönsten Gespräch.",
+                      danke: "Immer gern. Wir sitzen ja ohnehin hier.",
+                      archiv: "Davon wissen wir nichts, ehrlich. Frag uns lieber etwas anderes!" },
         roland:     { gruss: "Seid gegrüßt. Ich stehe hier nicht zum Vergnügen, aber für Fragen habe ich Zeit.",
-                      befinden: "Man steht. Seit Jahrhunderten. Die Knie? Aus Stein, zum Glück." },
+                      befinden: "Man steht. Seit Jahrhunderten. Die Knie? Aus Stein, zum Glück.",
+                      vorstellung: "Ich bin der Roland von Brandenburg. Seit 1474 stehe ich für das Marktrecht und die Freiheit dieser Stadt. Und ja, ich stehe wirklich nur.",
+                      danke: "Gern. Weglaufen kann ich ohnehin schlecht." },
         fontane:    { gruss: "Willkommen in der Plauer Straße! Treten Sie näher, der Wein wartet nicht.",
-                      befinden: "Bestens, solange die Flaschen ganz bleiben. Fragen Sie ruhig." },
+                      befinden: "Bestens, solange die Flaschen ganz bleiben. Fragen Sie ruhig.",
+                      vorstellung: "Wiesike mein Name, Friedrich Wilhelm Wiesike, Weinhändler in der Plauer Straße. Das Bild zeigt mein Geschäft, so wie es um 1920 aussah.",
+                      danke: "Aber ich bitte Sie. Kundschaft ist mir immer willkommen." },
         wackelauto: { gruss: "Brrrm! Hallo! Steig gedanklich auf, ich erzähl dir was von unterwegs.",
-                      befinden: "Ein bisschen wackelig, aber das ist bei mir Programm." },
+                      befinden: "Ein bisschen wackelig, aber das ist bei mir Programm.",
+                      vorstellung: "Ich bin das Wackelauto, Baujahr 1903, Blech und Schwungrad, gebaut im Patentwerk Lehmann hier in Brandenburg.",
+                      danke: "Gern! Brrrm." },
         bielefeld:  { gruss: "Tag auch! Ich buddel hier gerade, aber reden geht immer. Frag los.",
-                      befinden: "Gut! Frische Luft, gute Funde. Besser geht es kaum." },
+                      befinden: "Gut! Frische Luft, gute Funde. Besser geht es kaum.",
+                      vorstellung: "Marie Bielefeld. Ich grabe am Hasselberg Urnen aus, sechzehnhundert Jahre alt, und der Herr mit dem Mikrofon will wissen, warum.",
+                      danke: "Nichts zu danken. Und jetzt grabe ich weiter." },
     };
     function persona(schluessel, sonst) {
         const p = aktuellesWerk && PERSONA[aktuellesWerk.id];
@@ -1889,13 +1907,14 @@
         { m: /\b(hi|hallo|hey|moin|servus|guten (tag|morgen|abend)|huhu)\b/,
           a: () => persona("gruss", "Hallo! Schön, dass du mich ansprichst. Frag mich ruhig etwas über meine Geschichte; ein paar Ideen findest du als Knöpfe unter dem Eingabefeld.") },
         { m: /wie geht('?s| es dir)|alles (gut|klar|fit)\b/,
-          a: () => persona("befinden", "Für mein Alter erstaunlich gut! Ich hänge hier, schaue zu und erzähle gern. Und du?") },
+          a: () => persona("befinden", "Für mein Alter erstaunlich gut! Ich bin hier, schaue zu und erzähle gern. Und du?") },
         { m: /\bdanke|dankeschoen|vielen dank\b/,
-          a: () => "Sehr gern! Dafür hänge ich hier." },
+          a: () => persona("danke", "Sehr gern! Dafür bin ich schließlich da.") },
         { m: /tschuess|ciao|bye|auf wiedersehen|bis (bald|dann|spaeter)|mach('?s)? gut/,
           a: () => "Bis bald! Schau gern wieder vorbei; ich laufe nicht weg." },
         { m: /wer bist du|was bist du|stell dich (mal )?vor/,
-          a: () => "Ich bin " + (aktuellesWerk ? aktuellesWerk.titel : "ein Werk aus Brandenburg an der Havel") + ". Was ich erlebt habe, erzähle ich dir gern; frag einfach los." },
+          a: () => persona("vorstellung", "Ich gehöre zu den Werken aus Brandenburg an der Havel.")
+                   + " Was hier passiert ist, erzähle ich gern; frag einfach los." },
         { m: /bist du (echt|real|eine? (ki|ai)|ein (roboter|bot|computer))|kuenstliche intelligenz/,
           a: () => "Gute Frage! Meine Antworten haben Menschen geschrieben und gegen die Archive geprüft. Nur meine Filme wurden mit KI erzeugt. Was belegt und was erzählt ist, findest du unter Mehr wissen im Bereich „Wahr oder erzählt?“." },
         { m: /erzaehl (mir )?(einen |nen )?witz|sag was lustiges/,
@@ -1919,9 +1938,9 @@
         const tippt = blase("", "werk");
         tippt.classList.add("tippt");
         const eintrag = antwortFinden(text);
-        const antwort = eintrag ? eintrag.antwort : (smalltalkAntwort(text) || ARCHIV_SATZ);
+        const antwort = eintrag ? eintrag.antwort : (smalltalkAntwort(text) || archivSatz());
         MESS.chatFragen++;
-        if (!eintrag && antwort === ARCHIV_SATZ && MESS.chatOhneTreffer.length < 40)
+        if (!eintrag && antwort === archivSatz() && MESS.chatOhneTreffer.length < 40)
             MESS.chatOhneTreffer.push(text.slice(0, 90));   // zeigt inhaltliche Luecken auf
         // kurze Denkpause, damit es nicht nach Automat aussieht
         setTimeout(() => {
