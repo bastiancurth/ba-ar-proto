@@ -1090,8 +1090,13 @@
         try {
             const g = JSON.parse(localStorage.getItem("bra_geraeteDelta:" + w.id) || "null");
             if (g && g.v === KALIB_VERSION && [g.dx,g.dy,g.dz,g.ds].every(Number.isFinite) &&
-                Math.abs(g.dx) <= 100 && Math.abs(g.dy) <= 100 && Math.abs(g.dz) <= 100 &&
-                g.ds >= 0.5 && g.ds <= 2) return g;
+                Math.abs(g.dx) <= 500 && Math.abs(g.dy) <= 500 && Math.abs(g.dz) <= 500 &&
+                g.ds >= 0.05 && g.ds <= 20) return g;
+            // Grenzen bewusst weit: Die dpi-Annahmen in MARKER_MASSE sind nicht aus
+            // den Markerdateien belegt (das iset dieses Builds speichert kein dpi).
+            // Liegt eine Annahme daneben, ist die Korrektur entsprechend gross, und
+            // eine engere Pruefung wuerde die gespeicherte Justierung stillschweigend
+            // verwerfen. Genau das ist am 08.08. passiert.
         } catch(e) {}
         return neutralesDelta();
     }
@@ -1720,6 +1725,26 @@
         speechSynthesis.speak(u);
     }
 
+    // Tonspur abspielen mit garantiertem Rueckfall auf die Browserstimme.
+    // Zwei Wege, weil sich die Browser unterschiedlich verhalten: Fehlt die
+    // Datei, lehnt Chrome das play()-Versprechen ab, Safari und Firefox
+    // melden es dagegen ueber das error-Ereignis. Wer nur einen der beiden
+    // Wege absichert, hat auf dem jeweils anderen Browser Stille.
+    // Stand 08.08.: 30 der 35 Chat-Aufnahmen und 4 der 7 Vorlesespuren
+    // fehlen noch, dieser Rueckfall traegt also das halbe Experiment.
+    function tonMitRueckfall(el, text, erzwingen) {
+        let erledigt = false;
+        const ersatz = () => {
+            if (erledigt) return;
+            erledigt = true;
+            vorlesen(text, erzwingen);
+        };
+        el.addEventListener("error", ersatz);
+        el.addEventListener("playing", () => { erledigt = true; });
+        const p = el.play();
+        if (p && p.catch) p.catch(ersatz);
+    }
+
     // Vorlesen-Knopf an der Geschichte: ElevenLabs-Erzaehlspur, falls die
     // MP3 schon da ist, sonst Browser-Stimme. Zweiter Druck stoppt.
     window.vorlesenGeschichte = function() {
@@ -1733,7 +1758,7 @@
         if (w.audio) {
             chatAudio = new Audio(w.audio);
             chatAudio.volume = LAUTSTAERKE;
-            chatAudio.play().catch(() => vorlesen(w.geschichte, true));
+            tonMitRueckfall(chatAudio, w.geschichte, true);
         } else {
             vorlesen(w.geschichte, true);
         }
@@ -1955,7 +1980,7 @@
                 chatAudio.volume = LAUTSTAERKE;
                 geisterEcho(chatAudio);
                 // MP3 noch nicht produziert? Dann liest die Browser-Stimme vor.
-                if (ttsAn) chatAudio.play().catch(() => vorlesen(antwort));
+                if (ttsAn) tonMitRueckfall(chatAudio, antwort);
                 const knopf = document.createElement("span");
                 knopf.textContent = " 🔊";
                 knopf.style.cursor = "pointer";
@@ -1965,7 +1990,7 @@
                     chatAudio = new Audio(eintrag.audio);
                     chatAudio.volume = LAUTSTAERKE;
                     geisterEcho(chatAudio);
-                    chatAudio.play().catch(() => vorlesen(antwort));
+                    tonMitRueckfall(chatAudio, antwort, true);
                 };
                 tippt.appendChild(knopf);
             } else if (eintrag) {
