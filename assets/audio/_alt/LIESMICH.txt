@@ -1,0 +1,3 @@
+Hier liegen Tonspuren, die nicht mehr zum aktuellen Text passen.
+Nichts geloescht: Wer eine Datei zurueckholen will, verschiebt sie einfach
+wieder eine Ebene hoeher nach assets/audio/.

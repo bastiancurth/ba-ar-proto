@@ -1828,6 +1828,32 @@
                 if (ext) gpu = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
             }
         } catch (e) {}
+        // VERSATZ-MESSUNG. AR.js 3.4.8 bereitet das Suchbild so vor:
+        //     var vw = video.clientWidth, vh = video.clientHeight;
+        //     context.drawImage(video, 0, 0, vw, vh, ox, oy, w, h);
+        // clientWidth ist die ANZEIGEGROESSE des Videoelements, die ersten
+        // vier Zahlen von drawImage sind aber ein Ausschnitt in echten
+        // KAMERAPIXELN. Stimmen beide nicht ueberein, analysiert der Tracker
+        // einen anderen Bildbereich als den angezeigten, und die berechnete
+        // Pose sitzt entsprechend daneben. Der Fehler waechst mit dem
+        // Verhaeltnis der beiden Groessen und faellt deshalb auf jedem
+        // Geraet anders aus. Die folgenden Zahlen belegen das pro Geraet.
+        let versatz = "kein AR-Videoelement gefunden";
+        try {
+            const av = document.querySelector("video#arjs-video")
+                    || document.querySelector("a-scene video")
+                    || document.querySelector("video:not(#ki-video)");
+            if (av && av.videoWidth) {
+                const fx = av.clientWidth / av.videoWidth;
+                const fy = av.clientHeight / av.videoHeight;
+                versatz = "Anzeige " + av.clientWidth + "x" + av.clientHeight
+                        + " | Kamera " + av.videoWidth + "x" + av.videoHeight
+                        + " | Faktor x" + fx.toFixed(3) + " y" + fy.toFixed(3)
+                        + (Math.abs(fx - 1) < 0.02 && Math.abs(fy - 1) < 0.02
+                           ? "  -> deckungsgleich, kein Versatz zu erwarten"
+                           : "  -> WEICHT AB, Versatz zu erwarten");
+            }
+        } catch (e) {}
         const info = [
             "GERAETE-INFO (" + new Date().toLocaleString("de-DE") + ")",
             "Werk: " + (aktuellesWerk ? aktuellesWerk.id : (videoWerk ? videoWerk.id : "-")),
@@ -1842,6 +1868,7 @@
             "WebGL: " + webgl,
             "GPU/WebGL-Renderer: " + gpu,
             "AR-Kamerastream: " + arKameraInfo,
+            "Versatz-Ursache (Anzeige vs. Kamera): " + versatz,
             "Justier-Delta (Geraeteprofil): " + JSON.stringify(geraeteDelta),
             "",
             "--- MESSWERTE DIESES DURCHLAUFS ---",
