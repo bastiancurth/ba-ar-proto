@@ -34,7 +34,18 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; overflow: hidden; color: var(--text);
                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        video { object-fit: cover; }
+        /* object-fit NICHT global auf video setzen. Die Regel trifft sonst
+           auch das Kameravideo, das AR.js selbst anlegt und positioniert:
+           cover beschneidet das Kamerabild, waehrend die WebGL-Ebene
+           weiter mit den echten Videomassen rechnet. Ergebnis ist ein
+           gleichmaessiger Versatz aller Overlays, auf iOS anders als auf
+           Android, weil dort Kamera- und Bildschirmformat anders
+           auseinanderliegen. Genau das war am 08.08. zu sehen.
+           Das Buehnenvideo braucht cover und setzt es ohnehin inline
+           (siehe medium.style.objectFit), hier nur zur Sicherheit. */
+        #freihand-layer video, #freihand-layer img { object-fit: cover; }
+        /* Und falls AR.js oder ein Browser doch etwas erbt: ausdruecklich zurueck. */
+        video#arjs-video { object-fit: fill; }
         button { font-family: inherit; cursor: pointer; border: none; }
 
         /* ============ STATUS-PILLE (oben, gut lesbar auch ueber dem Kamerabild) ============ */
@@ -1085,8 +1096,25 @@
     const KALIB_VERSION = 2; // v1 verschob im einfachen Assistenten irrtuemlich die Y-Achse
     let geraeteDelta = { dx:0, dy:0, dz:0, ds:1 };
     const neutralesDelta = () => ({ dx:0, dy:0, dz:0, ds:1 });
+    // Rohmodus: ?kalib=aus liefert fuer jedes Werk ein neutrales Delta, ohne
+    // gespeicherte Werte zu loeschen. Damit laesst sich pruefen, ob ein Versatz
+    // aus der Berechnung kommt oder aus einer alten Justierung. Wichtig fuer die
+    // Fehlersuche, denn eine vergessene Justierung sieht genauso aus wie ein
+    // Rechenfehler. ?kalib=weg loescht die gespeicherten Werte zusaetzlich.
+    const kalibAus = params.get("kalib") === "aus" || params.get("kalib") === "weg";
+    if (params.get("kalib") === "weg") {
+        try {
+            const raus = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.indexOf("bra_geraeteDelta") === 0) raus.push(k);
+            }
+            raus.forEach(k => localStorage.removeItem(k));
+            if (raus.length) console.log("Justierungen entfernt:", raus.join(", "));
+        } catch(e) {}
+    }
     function deltaFuer(w) {
-        if (!w) return neutralesDelta();
+        if (!w || kalibAus) return neutralesDelta();
         try {
             const g = JSON.parse(localStorage.getItem("bra_geraeteDelta:" + w.id) || "null");
             if (g && g.v === KALIB_VERSION && [g.dx,g.dy,g.dz,g.ds].every(Number.isFinite) &&
